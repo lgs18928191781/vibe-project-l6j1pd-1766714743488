@@ -1,0 +1,4288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+       <!-- 移动端优化 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <!-- 缓存策略：允许缓存静态资源，但 HTML 页面本身不缓存 -->
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000">
+    <meta http-equiv="Pragma" content="public">
+    <title>MetaAPP</title>
+
+    <!-- Tailwind CSS -->
+
+    <link rel="stylesheet" href="src/normalize.css" />
+    <script src="src/taildwindcss.js"></script>
+
+    <!-- Vue 3 和相关库 -->
+        <script src="src/vue.js"></script>
+        <script src="src/vue-demi.js"></script>
+        <script src="src/pinia.js"></script>
+        <script src="src/vueuse-share.js"></script>
+        <script src="src/vueuse-code.js"></script>
+
+    <!-- 工具库 -->
+    <script src="src/crypto.js"></script>
+    <script src="src/metaid.js"></script>
+    <!-- MetaFS 分片上传 -->
+    <script src="src/useChunkUpload.js"></script>
+    <!-- MetaFS 直接上传 -->
+    <script src="src/useFileToChainDirect.js"></script>
+    <!-- Buffer 浏览器版本 -->
+  <script src="src/buffer.js"></script>
+    <script>
+        // 确保 Buffer 全局可用
+        if (typeof buffer !== 'undefined' && buffer.Buffer) {
+            window.Buffer = buffer.Buffer;
+        }
+    </script>
+
+    <style>
+        /* 自定义样式 */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s;
+        }
+
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+
+        .scale-enter-active, .scale-leave-active {
+            transition: all 0.3s;
+        }
+
+        .scale-enter-from, .scale-leave-to {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 用户头像样式 */
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* 按钮样式 - 替代 DaisyUI btn 类 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition-property: color, background-color, border-color;
+            transition-duration: 200ms;
+            border: 1px solid #d1d5db;
+            background-color: #ffffff;
+            color: #374151;
+        }
+
+        .btn:hover {
+            background-color: #f9fafb;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background-color: #9333ea;
+            color: #ffffff;
+            border-color: #9333ea;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7e22ce;
+        }
+
+        .btn-success {
+            background-color: #16a34a;
+            color: #ffffff;
+            border-color: #16a34a;
+        }
+
+        .btn-success:hover {
+            background-color: #15803d;
+        }
+
+        .btn-error {
+            background-color: #dc2626;
+            color: #ffffff;
+            border-color: #dc2626;
+        }
+
+        .btn-error:hover {
+            background-color: #b91c1c;
+        }
+
+        .btn-warning {
+            background-color: #eab308;
+            color: #ffffff;
+            border-color: #eab308;
+        }
+
+        .btn-warning:hover {
+            background-color: #ca8a04;
+        }
+
+        .btn-info {
+            background-color: #3b82f6;
+            color: #ffffff;
+            border-color: #3b82f6;
+        }
+
+        .btn-info:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid currentColor;
+        }
+
+        .btn-outline:hover {
+            background-color: gray;
+            color: #ffffff;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+
+        .btn-circle {
+            border-radius: 9999px;
+            width: 2.5rem;
+            height: 2.5rem;
+            padding: 0;
+        }
+
+        .btn-ghost {
+            border-color: transparent;
+            background-color: transparent;
+        }
+
+        .btn-ghost:hover {
+            background-color: #f3f4f6;
+        }
+
+        .btn-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* 模态框样式 - 替代 DaisyUI modal 类 */
+        .modal {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-open {
+            display: flex;
+        }
+
+        .modal::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-box {
+            position: relative;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 32rem;
+            width: 100%;
+            margin-left: 1rem;
+            margin-right: 1rem;
+            z-index: 10;
+        }
+
+        .modal-action {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        /* 提示框样式 - 替代 DaisyUI alert 类 */
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-width: 1px;
+        }
+
+        .alert-success {
+            background-color: #f0fdf4;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+
+        .alert-error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+
+        .alert-warning {
+            background-color: #fefce8;
+            color: #854d0e;
+            border-color: #fef08a;
+        }
+
+        .alert-info {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-color: #bfdbfe;
+        }
+
+        /* 表单控件 - 替代 DaisyUI form-control 类 */
+        .form-control {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        /* 输入框样式 - 替代 DaisyUI input 类 */
+        .input {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition-property: color, background-color, border-color;
+            transition-duration: 200ms;
+        }
+
+        .input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+
+        .input-bordered {
+            border: 1px solid #d1d5db;
+            background-color: #ffffff;
+        }
+
+        .input-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+
+        /* Textarea 样式 - 替代 DaisyUI textarea 类 */
+        .textarea {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition-property: color, background-color, border-color;
+            transition-duration: 200ms;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+
+        .textarea-bordered {
+            border: 1px solid #d1d5db;
+            background-color: #ffffff;
+        }
+
+        /* Select 下拉选择框样式 - 替代 DaisyUI select 类 */
+        .select {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition-property: color, background-color, border-color;
+            transition-duration: 200ms;
+            appearance: none;
+            background-repeat: no-repeat;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+            background-position: right 0.5rem center;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        .select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+
+        .select-bordered {
+            border: 1px solid #d1d5db;
+            background-color: #ffffff;
+        }
+
+        /* 导航栏 - 替代 DaisyUI navbar 类 */
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+        }
+
+        /* 卡片样式 - 替代 DaisyUI card 类 */
+        .card {
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            line-height: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* 下拉菜单 - 替代 DaisyUI dropdown 类 */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-end {
+            text-align: right;
+        }
+
+        .dropdown-content {
+            position: absolute;
+            right: 0;
+            margin-top: 0.5rem;
+            transform-origin: top right;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            display: none;
+        }
+
+        .dropdown:hover .dropdown-content,
+        .dropdown:focus-within .dropdown-content {
+            display: block;
+        }
+
+        .menu {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+
+        .menu li {
+            list-style: none;
+        }
+
+        .menu a {
+            display: block;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            color: #374151;
+            transition-property: color, background-color;
+            transition-duration: 200ms;
+        }
+
+        .menu a:hover {
+            background-color: #f3f4f6;
+        }
+
+        /* 加载动画 - 替代 DaisyUI loading 类 */
+        .loading {
+            display: inline-block;
+        }
+
+        .loading-spinner {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid currentColor;
+            border-top-color: transparent;
+            border-radius: 9999px;
+            animation: spin 1s linear infinite;
+        }
+
+        /* 主题颜色变量 - 替代 DaisyUI base 颜色 */
+        .bg-base-100 {
+            background-color: #ffffff;
+        }
+
+        .bg-base-200 {
+            background-color: #f9fafb;
+        }
+
+        .bg-base-300 {
+            background-color: #f3f4f6;
+        }
+
+        .text-base-content {
+            color: #111827;
+        }
+
+        /* 文件输入框 */
+        .file-input {
+            width: 100%;
+        }
+
+        .file-input-bordered {
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background-color: #ffffff;
+        }
+
+        .file-input-bordered::file-selector-button {
+            margin-right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 0;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .file-input-bordered:hover::file-selector-button {
+            background-color: #dbeafe;
+        }
+
+        /* 圆角盒子 */
+        .rounded-box {
+            border-radius: 0.5rem;
+        }
+
+        /* 分隔线 */
+        .divider {
+            border-top: 1px solid #e5e7eb;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Toast 通知框样式 - 替代 DaisyUI toast 类 */
+        .toast {
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 1rem;
+            pointer-events: none;
+        }
+
+        .toast-top {
+            top: 0;
+        }
+
+        .toast-bottom {
+            bottom: 0;
+        }
+
+        .toast-start {
+            left: 0;
+        }
+
+        .toast-end {
+            right: 0;
+        }
+
+        .toast-center {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .toast-middle {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .toast > * {
+            pointer-events: auto;
+        }
+
+        /* Badge 徽章样式 - 替代 DaisyUI badge 类 */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            line-height: 1rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .badge-primary {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-secondary {
+            background-color: #f3e8ff;
+            color: #6b21a8;
+        }
+
+        .badge-success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #854d0e;
+        }
+
+        .badge-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-sm {
+            padding: 0.125rem 0.375rem;
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+
+        .badge-lg {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+
+        /* 头像容器 */
+        .avatar {
+            display: inline-block;
+            position: relative;
+        }
+
+        .avatar > div {
+            overflow: hidden;
+            border-radius: 9999px;
+        }
+
+        /* 标签 */
+        .label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .label-text {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            color: #374151;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ==================== 文件上传组件样式 ==================== */
+        .file-drop-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #f9fafb;
+        }
+
+        .file-drop-zone:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .file-drop-zone.drag-over {
+            border-color: #2563eb;
+            background-color: #dbeafe;
+            transform: scale(1.02);
+        }
+
+        .file-preview-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+        }
+
+        .file-preview-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .file-preview-item:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .file-preview-content {
+            flex-shrink: 0;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f3f4f6;
+            border-radius: 0.375rem;
+            overflow: hidden;
+        }
+
+        .file-thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .file-icon-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .file-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #111827;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-meta {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .file-remove-btn {
+            flex-shrink: 0;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ef4444;
+            background-color: #fef2f2;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-remove-btn:hover {
+            background-color: #fee2e2;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script type="module">
+        // 等待所有库加载完成
+        window.addEventListener('load', () => {
+            console.log('All libraries loaded, checking...');
+            console.log('Vue:', typeof Vue !== 'undefined' ? '✓' : '✗');
+            console.log('Pinia:', typeof Pinia !== 'undefined' ? '✓' : '✗');
+            console.log('VueUse:', typeof VueUse !== 'undefined' ? '✓' : '✗');
+            console.log('Buffer:', typeof Buffer !== 'undefined' ? '✓' : '✗');
+             console.log('MetaIDJs:', typeof MetaIDJs !== 'undefined' ? '✓' : '✗');
+              // MetaIDJs 现在可以作为全局对象使用
+       
+        });
+
+        // 检查必要的全局变量
+        if (typeof Vue === 'undefined') {
+            throw new Error('Vue is not loaded');
+        }
+        if (typeof Pinia === 'undefined') {
+            throw new Error('Pinia is not loaded');
+        }
+        if (typeof VueUse === 'undefined') {
+            console.warn('VueUse is not loaded - will use fallback implementation');
+        }
+        if (typeof Buffer === 'undefined') {
+            console.warn('Buffer is not loaded - Buffer operations will be limited');
+            // 提供简单的 Buffer 降级实现
+            window.Buffer = {
+                from: (data, encoding) => {
+                    if (encoding === 'hex') {
+                        // 将 hex 字符串转换为字节数组
+                        const bytes = [];
+                        for (let i = 0; i < data.length; i += 2) {
+                            bytes.push(parseInt(data.substr(i, 2), 16));
+                        }
+                        return {
+                            toString: (toEncoding) => {
+                                if (toEncoding === 'base64') {
+                                    // 简单的 base64 编码
+                                    return btoa(String.fromCharCode.apply(null, bytes));
+                                }
+                                return data;
+                            }
+                        };
+                    }
+                    return { toString: () => data };
+                }
+            };
+        }
+
+        const { createApp, ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } = Vue;
+        const { defineStore, createPinia } = Pinia;
+
+        // ==================== Meta-Contract 解构 ====================
+        // 从全局 MetaIDJs 对象中获取 TxComposer 和 mvc
+        let TxComposer, mvc;
+
+        // 等待 MetaIDJs 加载完成
+        function waitForMetaIDJs() {
+            return new Promise((resolve) => {
+                if (typeof MetaIDJs !== 'undefined') {
+                    TxComposer = MetaIDJs.TxComposer;
+                    mvc = MetaIDJs.mvc;
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (typeof MetaIDJs !== 'undefined') {
+                            TxComposer = MetaIDJs.TxComposer;
+                            mvc = MetaIDJs.mvc;
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            });
+        }
+
+        // VueUse Core - 使用正确的全局变量名，如果失败则使用降级实现
+        let useLocalStorage, createGlobalState;
+
+        if (typeof VueUse !== 'undefined') {
+            ({ useLocalStorage, createGlobalState } = VueUse);
+        } else {
+            // 降级实现：自己实现 useLocalStorage 和 createGlobalState
+            console.warn('VueUse not found, using fallback implementation');
+
+            useLocalStorage = (key, initialValue) => {
+                const data = ref(initialValue);
+
+                // 从 localStorage 读取初始值
+                try {
+                    const item = localStorage.getItem(key);
+                    if (item !== null) {
+                        data.value = JSON.parse(item);
+                    }
+                } catch (error) {
+                    console.error('Error reading from localStorage:', error);
+                }
+
+                // 监听变化并保存到 localStorage
+                watch(data, (newValue) => {
+                    try {
+                        localStorage.setItem(key, JSON.stringify(newValue));
+                    } catch (error) {
+                        console.error('Error writing to localStorage:', error);
+                    }
+                }, { deep: true });
+
+                return data;
+            };
+
+            createGlobalState = (stateFactory) => {
+                let state;
+                return () => {
+                    if (!state) {
+                        state = stateFactory();
+                    }
+                    return state;
+                };
+            };
+        }
+
+        // ==================== 常量定义 ====================
+        const CONSTANTS = {
+            NETWORK: 'livenet',
+            SIGNING_MESSAGE: 'IDNote Authentication',
+            MAN_PUB_KEY: '048add0a6298f10a97785f7dd069eedb83d279a6f03e73deec0549e7d6fcaac4eef2c279cf7608be907a73c89eb44c28db084c27b588f1bd869321a6f104ec642d',
+            MAN_BASE_URL: 'https://man.metaid.io',
+            MAN_V2_BASE_URL:'https://manapi.metaid.io',
+            BTC_FEE_RATE_URL: 'https://api.mvcscan.com/browser/v1/fees/recommended?chain=btc',
+            MVC_FEE_RATE_URL: 'https://api.mvcscan.com/browser/v1/fees/recommended?net=livenet',
+            METAFS_API_BASE:`https://file.metaid.io/metafile-uploader`,
+            METASO_ASSET_API:`https://www.metaso.network/assist-open-api`,
+            BroadCast_API:`https://www.metalet.space/wallet-api/v3/tx/broadcast`
+        };
+
+        // ==================== Toast/Alert 工具 ====================
+        // 创建一个简单的toast系统使用自定义的alert样式
+        const useToast = createGlobalState(() => {
+            const alerts = ref([]);
+            let alertId = 0;
+
+            const showToast = (message, type = 'info') => {
+                const id = alertId++;
+                alerts.value.push({ id, message, type });
+                setTimeout(() => {
+                    alerts.value = alerts.value.filter(a => a.id !== id);
+                }, 3000);
+            };
+
+            return { alerts, showToast };
+        });
+
+        // ==================== 工具函数 ====================
+        // 延迟函数
+        function sleep(timer = 2000) {
+            return new Promise(resolve => setTimeout(resolve, timer));
+        }
+
+        // 完整重新加载页面
+        function completeReload() {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('clear');
+            url.searchParams.delete('address');
+            window.location.href = url.href;
+        }
+
+        // ==================== HTTP 请求工具 (使用 Fetch 替换 Axios) ====================
+        // 创建HTTP请求类
+        class HttpRequest {
+            constructor(baseURL, config = {}) {
+                this.baseURL = baseURL;
+                this.config = config;
+            }
+
+            getToken() {
+                return localStorage.getItem('metaid_access_token');
+            }
+
+            async request(url, options = {}) {
+                const token = this.getToken();
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...options.headers,
+                };
+
+                if (token) {
+                    headers.Authorization = `Bearer ${token}`;
+                }
+
+                try {
+                    console.log(`📤 [${options.method || 'GET'}] ${url}`);
+
+                    const response = await fetch(this.baseURL + url, {
+                        ...options,
+                        headers,
+                    });
+
+                    console.log(`📥 [${options.method || 'GET'}] ${url} - Status: ${response.status}`);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    // 自定义响应处理
+                    if (this.config.responseHandler) {
+                        return this.config.responseHandler({ data });
+                    }
+
+                    // 默认响应处理
+                    if (data && typeof data.code === 'number') {
+                        if (data.code === 1 || data.code === 0 || data.code === 200) {
+                            return data.data !== undefined ? data.data : data;
+                        }
+                        throw new Error(data.message || '请求失败');
+                    }
+
+                    return data;
+                } catch (error) {
+                    console.error('❌ Request error:', error);
+                    throw error;
+                }
+            }
+
+            async get(url, params = {}) {
+                const query = new URLSearchParams(params).toString();
+                const fullUrl = query ? `${url}?${query}` : url;
+                return this.request(fullUrl, { method: 'GET' });
+            }
+
+            async post(url, data = {}) {
+                return this.request(url, {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                });
+            }
+        }
+
+        // MAN API 实例
+        const manApi = new HttpRequest(`${CONSTANTS.MAN_BASE_URL}/api`, {
+            responseHandler: ({ data }) => {
+                return new Promise((resolve, reject) => {
+                    if (data && typeof data.code === 'number') {
+                        if (data.code === 1) {
+                            resolve(data.data);
+                        } else {
+                            reject({ code: data.code, message: data.message || '请求失败' });
+                        }
+                    } else {
+                        resolve(data.data || data);
+                    }
+                });
+            },
+        });
+
+         // ==================== MAN V2 API ====================
+        // MAN V2 API 基础URL
+        const MAN_V2_BASE_URL = CONSTANTS.MAN_V2_BASE_URL;
+
+        // MAN V2 API 实例
+        const manV2Api = new HttpRequest(MAN_V2_BASE_URL, {
+            responseHandler: ({ data }) => {
+                return new Promise((resolve, reject) => {
+                    if (data && typeof data.code === 'number') {
+                        if (data.code === 1 || data.code === 200) {
+                            resolve(data.data);
+                        } else {
+                            reject({
+                                code: data.code,
+                                data: data.data,
+                                message: data.message,
+                            });
+                        }
+                    } else {
+                        resolve(data.data || data);
+                    }
+                });
+            },
+        });
+
+        // 获取指定 path 下所有 Pin（分页）
+        async function getPinListByPath(params) {
+            const { cursor = 0, size = 20, path } = params;
+            const query = new URLSearchParams({
+                cursor: cursor.toString(),
+                size: size.toString(),
+                path
+            }).toString();
+            return manV2Api.get('/pin/path/list' + `?${query}`);
+        }
+
+           /**
+         * 5. 获取指定地址和 path 下 Pin（倒序分页）
+         */
+        async function getAddressPinList(params){
+        const { address, cursor = 0, size = 20, path } = params
+        const query = new URLSearchParams({
+        cursor: cursor.toString(),
+        size: size.toString(),
+        path
+        }).toString()
+        return manV2Api.get(`/address/pin/list/${address}?${query}`)
+        }
+
+        // 获取 Pin 详情
+        async function getPinDetail(params) {
+            const { numberOrId } = params;
+            return manV2Api.get(`/pin/${numberOrId}`);
+        }
+
+
+        // ==================== Meta-Contract 相关函数 ====================
+
+        // 辅助函数：生成唯一键
+        function generateKey() {
+            return (
+                'key_' +
+                Date.now() +
+                '_' +
+                Math.random()
+                    .toString(36)
+                    .slice(2, 8)
+            );
+        }
+
+        // 获取字符串 UTF-8 字节大小
+        function getStringSize(str) {
+            return new TextEncoder().encode(str).length;
+        }
+
+        // 判断是否超过 1MB
+        function isBiggerThan1MB(str) {
+            return getStringSize(str) > 1024 * 1024;
+        }
+
+        // 构建 MetaID OpReturn V2 数据
+        function buildOpReturnV2(metaidData, options) {
+            const res1 = ['metaid', metaidData.operation];
+            const res2 = [];
+
+            if (metaidData.operation !== 'init') {
+                res2.push(metaidData.path);
+                res2.push(metaidData?.encryption ?? '0');
+                res2.push(metaidData?.version ?? '1.0.0');
+                res2.push(metaidData?.contentType ?? 'text/plain;utf-8');
+
+                const body = metaidData.body == null
+                    ? undefined
+                    : Buffer.isBuffer(metaidData.body)
+                    ? metaidData.body
+                    : Buffer.from(metaidData.body, metaidData?.encoding ?? 'utf-8');
+                res2.push(body);
+            }
+
+            return [...res1, ...res2];
+        }
+
+        // 广播交易到 API
+        async function broadcastToApi({ txHex, network, chain = 'mvc' }) {
+            try {
+                const response = await fetch(`${CONSTANTS.BroadCast_API}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chain: chain,
+                        net: network,
+                        rawTx: txHex,
+                    }),
+                });
+
+                const result = await response.json();
+                const { data: txid, message } = result;
+
+                if (!txid) {
+                    throw new Error(message);
+                }
+
+                return { txid };
+            } catch (error) {
+                console.error('Broadcast error:', error);
+                throw error;
+            }
+        }
+
+        // 单个交易广播
+        async function broadcast({ txComposer, network }) {
+            const txHex = txComposer.getTx().toString();
+            const { txid } = await broadcastToApi({ txHex, network });
+            console.log('txid', txid);
+            return { txid };
+        }
+
+        // 批量广播交易
+        async function batchBroadcast({ txComposer, network }) {
+            const res = [];
+            for (let i = 0; i < txComposer.length; i++) {
+                const broadcastRes = await broadcast({
+                    txComposer: txComposer[i],
+                    network,
+                });
+                res.push(broadcastRes);
+            }
+            return res;
+        }
+
+        // 支付函数
+        async function pay({ transactions, feeb }) {
+            const params = {
+                transactions: transactions.map(transaction => {
+                    return {
+                        txComposer: transaction.txComposer.serialize(),
+                        message: transaction.message,
+                    };
+                }),
+                hasMetaid: true,
+                feeb,
+            };
+
+            // 处理大数据分片存储
+            if (window.metaidwallet.storageChunk && isBiggerThan1MB(JSON.stringify(params))) {
+                const key = generateKey();
+                const data = JSON.stringify(params);
+                const chunkSize = 256 * 1024; // 每片 256KB
+                const total = Math.ceil(data.length / chunkSize);
+
+                for (let i = 0; i < total; i++) {
+                    const chunk = data.slice(i * chunkSize, (i + 1) * chunkSize);
+                    await window.metaidwallet.storageChunk({ chunk, index: i, total, key });
+                }
+
+                const ret = await window.metaidwallet.pay({
+                    useChunk: true,
+                    chunkKey: key,
+                });
+
+                const { payedTransactions, status, message } = ret;
+
+                if (status) {
+                    throw new Error(message || status);
+                }
+
+                return payedTransactions.map((txComposerSerialized) => {
+                    return TxComposer.deserialize(txComposerSerialized);
+                });
+            }
+
+            // 正常支付流程
+            const ret = await window.metaidwallet.pay(params);
+            const { payedTransactions, status, message } = ret;
+
+            if (status) {
+                throw new Error(message || status);
+            }
+
+            return payedTransactions.map((txComposerSerialized) => {
+                return TxComposer.deserialize(txComposerSerialized);
+            });
+        }
+
+        // 使用 Asset 创建 Pin
+        async function createPinWithAsset(metaidData, options) {
+            const address = await window.metaidwallet.getAddress();
+
+            let utxo = options?.utxo;
+            if (!utxo) {
+                const utxos = await window.metaidwallet.getUtxos();
+                utxo = utxos.find(u => u.address === address);
+
+                if (!utxo) {
+                    const url = `${options.assistDomain}/v1/assist/gas/mvc/address-init`;
+                    const preRes = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            gasChain: 'mvc',
+                            address,
+                        }),
+                    });
+                    const initUtxo = await preRes.json();
+
+                    if (initUtxo.error) {
+                        throw new Error(initUtxo.error);
+                    }
+
+                    if (!initUtxo.data) {
+                        await sleep(5000);
+                        const utxos = await window.metaidwallet.getUtxos();
+                        utxo = utxos.find(u => u.address === address);
+                        if (!utxo) {
+                            throw new Error('No UTXO found for address');
+                        }
+                    } else {
+                        utxo = {
+                            txid: initUtxo.data.txId,
+                            outIndex: initUtxo.data.index,
+                            value: initUtxo.data.amount,
+                            address: initUtxo.data.address,
+                        };
+                    }
+                }
+            }
+
+            const pinTxComposer = new TxComposer();
+            pinTxComposer.appendP2PKHInput({
+                address: new mvc.Address(address, options.network),
+                satoshis: utxo.value,
+                txId: utxo.txid,
+                outputIndex: utxo.outIndex,
+            });
+
+            pinTxComposer.appendP2PKHOutput({
+                address: new mvc.Address(address, options.network),
+                satoshis: 1,
+            });
+
+            const metaidOpreturn = buildOpReturnV2(metaidData, {
+                network: options?.network ?? 'testnet',
+            });
+            pinTxComposer.appendOpReturnOutput(metaidOpreturn);
+
+            const changeAddress = new mvc.Address(address, options.network);
+            pinTxComposer.appendP2PKHOutput({
+                address: changeAddress,
+                satoshis: utxo.value,
+            });
+
+            const url = `${options.assistDomain}/v1/assist/gas/mvc/pre`;
+            const preRes = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    txHex: pinTxComposer.getRawHex(),
+                    address,
+                }),
+            });
+            const preData = await preRes.json();
+
+            if (preData.error) {
+                throw new Error(preData.error);
+            }
+
+            const tx = new mvc.Transaction(preData.data.txHex);
+            const txObj = tx.toObject();
+            const inputs = txObj.inputs;
+            console.log('inputs', inputs);
+
+            // 获取所有引用的UTXO信息
+            const utxoPromises = txObj.inputs.map(async (input) => {
+                let utxoRawUrl = `https://mvcapi${
+                    options.network === 'testnet' ? '-testnet' : ''
+                }.cyber3.space/tx/${input.prevTxId}/raw`;
+
+                if (options.network !== 'testnet') {
+                    utxoRawUrl = `https://api.microvisionchain.com/open-api-mvc/tx/${input.prevTxId}/raw`;
+                }
+
+                const utxoRes = await fetch(utxoRawUrl);
+                return await utxoRes.json();
+            });
+            const _utxos = await Promise.all(utxoPromises);
+
+            // 为每个input设置正确的output
+            tx.inputs.forEach((input, index) => {
+                const _tx = new mvc.Transaction(_utxos[index].hex);
+                const utxoOutput = _tx.outputs[input.outputIndex];
+                tx.inputs[index].output = new mvc.Transaction.Output({
+                    script: utxoOutput.script,
+                    satoshis: utxoOutput.satoshis,
+                });
+            });
+
+            const txComposer = new TxComposer(tx);
+            const txComposerSerialize = txComposer.serialize();
+            const params = {
+                transaction: [
+                    {
+                        txComposer: txComposerSerialize,
+                        toSignInputs: [0],
+                    },
+                ],
+            };
+
+            const [_txComposerSerialize] = await window.metaidwallet.unlockP2PKHInput(params);
+
+            const commitUrl = `${options.assistDomain}/v1/assist/gas/mvc/commit`;
+            const commitRes = await fetch(commitUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    txHex: TxComposer.deserialize(_txComposerSerialize).getRawHex(),
+                    orderId: preData.data.orderId,
+                }),
+            });
+            const commitData = await commitRes.json();
+
+            if (commitData.code == 1 && !commitData.data) {
+                throw new Error(
+                    JSON.stringify({
+                        state: commitData.code,
+                        message: commitData.message,
+                    })
+                );
+            }
+
+            return {
+                txid: commitData.data.txId,
+                utxo: {
+                    txid: commitData.data.txId,
+                    outIndex: 2,
+                    value: utxo.value,
+                    address: address,
+                },
+            };
+        }
+
+        // 创建 Pin
+        async function createPin(metaidData, options) {
+            const transactions = options?.transactions ?? [];
+            const address = await window.metaidwallet.getAddress();
+
+            const pinTxComposer = new TxComposer();
+
+            pinTxComposer.appendP2PKHOutput({
+                address: new mvc.Address(address, options.network),
+                satoshis: 1,
+            });
+
+            const metaidOpreturn = buildOpReturnV2(metaidData, {
+                network: options?.network ?? 'testnet'
+            });
+
+            pinTxComposer.appendOpReturnOutput(metaidOpreturn);
+
+            if (options?.service && options?.service.address && options?.service.satoshis) {
+                pinTxComposer.appendP2PKHOutput({
+                    address: new mvc.Address(options.service.address, options.network),
+                    satoshis: Number(options.service.satoshis),
+                });
+            }
+
+            if (options?.outputs) {
+                for (const output of options.outputs) {
+                    pinTxComposer.appendP2PKHOutput({
+                        address: new mvc.Address(output.address, options.network),
+                        satoshis: Number(output.satoshis),
+                    });
+                }
+            }
+
+            transactions.push({
+                txComposer: pinTxComposer,
+                message: 'Create Pin',
+            });
+
+            if (options?.serialAction === 'combo') {
+                return { transactions };
+            }
+
+            // 应用支付
+            const payRes = await pay({
+                transactions,
+                feeb: options?.feeRate,
+            });
+
+            await batchBroadcast({ txComposer: payRes, network: options.network });
+
+            return {
+                txid: payRes[payRes.length - 1].getTxId(),
+                txids: payRes.map(item => item.getTxId()),
+            };
+        }
+
+        // 创建或更新用户信息
+        async function createOrUpdateUserInfo({ userData, oldUserData, options }) {
+            const metaDatas = [];
+
+            if (userData.name) {
+                metaDatas.push({
+                    operation: oldUserData.nameId ? 'modify' : 'create',
+                    body: userData.name,
+                    path: oldUserData.nameId ? `@${oldUserData.nameId}` : '/info/name',
+                    encoding: 'utf-8',
+                    contentType: 'text/plain',
+                    flag: 'metaid',
+                });
+            }
+
+            if (userData.bio) {
+                metaDatas.push({
+                    operation: oldUserData.bioId ? 'modify' : 'create',
+                    body: userData.bio,
+                    path: oldUserData.bioId ? `@${oldUserData.bioId}` : '/info/bio',
+                    encoding: 'utf-8',
+                    contentType: 'text/plain',
+                    flag: 'metaid',
+                });
+            }
+
+            if (userData.avatar) {
+                metaDatas.push({
+                    operation: oldUserData.avatarId ? 'modify' : 'create',
+                    body: userData.avatar,
+                    path: oldUserData.avatarId ? `@${oldUserData.avatarId}` : '/info/avatar',
+                    encoding: 'base64',
+                    contentType: 'image/jpeg;binary',
+                    flag: 'metaid',
+                });
+            }
+
+            if (userData.background) {
+                metaDatas.push({
+                    operation: oldUserData.backgroundId ? 'modify' : 'create',
+                    body: userData.background,
+                    path: oldUserData.backgroundId ? `@${oldUserData.backgroundId}` : '/info/background',
+                    encoding: 'base64',
+                    contentType: 'image/jpeg;binary',
+                    flag: 'metaid',
+                });
+            }
+
+            if (userData.chatpubkey) {
+                if (!oldUserData.chatpubkey) {
+                    metaDatas.push({
+                        operation: 'create',
+                        body: userData.chatpubkey,
+                        path: `/info/chatpubkey`,
+                        encoding: 'utf-8',
+                        contentType: 'text/plain',
+                        flag: 'metaid',
+                    });
+                }
+            }
+
+            if (metaDatas.length === 0) {
+                throw new Error('No user data provided to create user info');
+            }
+
+            let _transactions = [];
+            let _txids = [];
+
+            if (options.assistDomain && !oldUserData.nameId) {
+                let utxo;
+                for (let i = 0; i < metaDatas.length; i++) {
+                    const metaData = metaDatas[i];
+                    const _options = {
+                        network: options?.network ?? 'testnet',
+                        signMessage: 'create User Info',
+                        serialAction: 'finish',
+                        assistDomain: options.assistDomain,
+                    };
+
+                    if (utxo) {
+                        _options.utxo = utxo;
+                    }
+
+                    const { txid, utxo: _utxo } = await createPinWithAsset(metaData, _options);
+                    utxo = _utxo;
+
+                    if (txid) {
+                        _txids.push(txid);
+                    }
+                }
+            } else {
+                for (let i = 0; i < metaDatas.length; i++) {
+                    const metaData = metaDatas[i];
+                    const { transactions, txid, txids } = await createPin(metaData, {
+                        network: options?.network ?? 'testnet',
+                        signMessage: 'create User Info',
+                        serialAction: i === metaDatas.length - 1 ? 'finish' : 'combo',
+                        transactions: [..._transactions],
+                        feeRate: options?.feeRate,
+                    });
+                    _transactions = transactions;
+                    if (txids) {
+                        _txids = txids;
+                    }
+                }
+            }
+
+            const ret = {
+                nameRes: undefined,
+                bioRes: undefined,
+                avatarRes: undefined,
+                backgroundRes: undefined,
+                chatpubkeyRes: undefined,
+            };
+
+            const userInfos = [
+                { key: 'name', resKey: 'nameRes' },
+                { key: 'bio', resKey: 'bioRes' },
+                { key: 'avatar', resKey: 'avatarRes' },
+                { key: 'background', resKey: 'backgroundRes' },
+                { key: 'chatpubkey', resKey: 'chatpubkeyRes' },
+            ];
+
+            for (let i = 0; i < userInfos.length; i++) {
+                const { key, resKey } = userInfos[i];
+                if (userData[key]) {
+                    const txid = _txids.shift();
+                    ret[resKey] = { txid };
+                }
+            }
+
+            return ret;
+        }
+
+        // 创建用户公钥
+        async function createUserPubkey({ pubkey, pubkeyId, options }) {
+            const metaDatas = [];
+
+            if (pubkey) {
+                const hasPubkey = !!pubkeyId;
+                const path = hasPubkey && pubkeyId
+                    ? `@{${pubkeyId}}`
+                    : `/info/chatpubkey`;
+
+                metaDatas.push({
+                    operation: hasPubkey ? 'modify' : 'create',
+                    body: pubkey,
+                    path: path,
+                    encoding: 'utf-8',
+                    contentType: 'text/plain',
+                    flag: 'metaid',
+                });
+            } else {
+                throw new Error('No Publickey provided to create user info');
+            }
+
+            if (metaDatas.length === 0) {
+                throw new Error('No user data provided to publickey');
+            }
+
+            let _transactions = [];
+            let _txids = [];
+
+            for (let i = 0; i < metaDatas.length; i++) {
+                const metaData = metaDatas[i];
+                const { transactions, txid, txids } = await createPin(metaData, {
+                    network: options?.network ?? 'testnet',
+                    signMessage: 'create User Info',
+                    serialAction: i === metaDatas.length - 1 ? 'finish' : 'combo',
+                    transactions: [..._transactions],
+                    feeRate: options?.feeRate,
+                });
+                _transactions = transactions;
+                if (txids) {
+                    _txids = txids;
+                }
+            }
+
+            return _txids[0];
+        }
+
+        // 获取 MVC 奖励
+        async function getMVCRewards(params, signature, options = {}) {
+            const response = await fetch(
+                `${CONSTANTS.METASO_ASSET_API}/v1/assist/gas/mvc/address-reward`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Signature': signature['X-Signature'] || '',
+                        'X-Public-Key': signature['X-Public-Key'] || '',
+                        ...(options?.headers || {}),
+                    },
+                    body: JSON.stringify(params),
+                    ...options,
+                }
+            );
+            return response.json();
+        }
+
+        // ==================== 图片处理相关函数 ====================
+
+        // 压缩图片
+        async function compressImage(image) {
+            const options = {
+                maxSizeMB: 0.3,
+                maxWidthOrHeight: 2048,
+                useWebWorker: true,
+            };
+            const compressedFile = await imageCompression(image, options);
+            return compressedFile;
+        }
+
+        // 文件转换为 AttachmentItem
+        function FileToAttachmentItem(file, encrypt = 0) {
+            return new Promise(async resolve => {
+                function readResult(blob) {
+                    return new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const wordArray = CryptoJS.lib.WordArray.create(reader.result);
+                            const buffer = Buffer.from(reader.result);
+                            hex += buffer.toString('hex'); // 更新hex
+                            sha256Algo.update(wordArray); // 更新hash
+                            resolve();
+                        };
+                        reader.readAsArrayBuffer(blob);
+                    });
+                }
+
+                // 分块读取，防止内存溢出，这里设置为20MB
+                const chunkSize = 20 * 1024 * 1024;
+                let hex = ''; // 二进制
+                const sha256Algo = CryptoJS.algo.SHA256.create();
+
+                for (let index = 0; index < file.size; index += chunkSize) {
+                    await readResult(file.slice(index, index + chunkSize));
+                }
+
+                resolve({
+                    data: hex,
+                    fileName: file.name,
+                    fileType: file.type,
+                    sha256: CryptoJS.enc.Hex.stringify(sha256Algo.finalize()),
+                    url: URL.createObjectURL(file),
+                    encrypt,
+                    size: file.size,
+                });
+            });
+        }
+
+        // 图片转换为 Attachment
+        async function image2Attach(images) {
+            const attachments = [];
+
+            for (let i = 0; i < images.length; i++) {
+                const current = images[i];
+                if (!current) continue;
+
+                // 压缩图片（GIF 除外）
+                const compressed = await compressImage(current);
+                const result = await FileToAttachmentItem(
+                    current.type === 'image/gif' ? current : compressed
+                );
+                if (result) attachments.push(result);
+            }
+
+            return attachments;
+        }
+
+        // 获取 ECDH 公钥
+        async function getEcdhPublickey(pubkey) {
+            if (!window.metaidwallet) {
+                throw new Error('Metalet wallet not found');
+            }
+
+            try {
+                const ecdh = await window.metaidwallet.common.ecdh({
+                    externalPubKey: pubkey || CONSTANTS.MAN_PUB_KEY,
+                });
+                return ecdh;
+            } catch (error) {
+                console.error('Failed to get ECDH public key:', error);
+                return null;
+            }
+        }
+
+         // ==================== 加密/解密工具 ====================
+
+        /**
+         * 生成指定长度的随机字节数组（使用浏览器 Web Crypto API）
+         */
+        function randomBytes(length) {
+            const buffer = new Uint8Array(length);
+            crypto.getRandomValues(buffer);
+            return buffer;
+        }
+
+        /**
+         * 将十六进制字符串转换为 ArrayBuffer
+         */
+        function hexToArrayBuffer(hex) {
+            // 移除可能存在的空格和换行
+            hex = hex.replace(/\s/g, '');
+
+            if (hex.length % 2 !== 0) {
+                throw new Error('十六进制字符串长度必须是偶数');
+            }
+
+            const buffer = new ArrayBuffer(hex.length / 2);
+            const view = new Uint8Array(buffer);
+
+            for (let i = 0; i < hex.length; i += 2) {
+                view[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+            }
+
+            return buffer;
+        }
+
+        /**
+         * 将 Uint8Array 转换为十六进制字符串
+         */
+        function arrayToHex(array) {
+            return Array.from(array)
+                .map(byte => byte.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        /**
+         * 将 ArrayBuffer 或 Uint8Array 转换为 base64 字符串
+         */
+        function arrayBufferToBase64(buffer) {
+            const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        /**
+         * 将 base64 字符串转换为 ArrayBuffer
+         */
+        function base64ToArrayBuffer(base64) {
+            const binary = atob(base64);
+            const buffer = new ArrayBuffer(binary.length);
+            const view = new Uint8Array(buffer);
+            for (let i = 0; i < binary.length; i++) {
+                view[i] = binary.charCodeAt(i);
+            }
+            return buffer;
+        }
+
+        /**
+         * 使用十六进制密钥进行 AES-256-GCM 加密（使用 Web Crypto API）
+         */
+        async function encryptGCM(plaintext, hexKey) {
+            try {
+                // 生成 12 字节的随机 IV
+                const iv = randomBytes(12);
+
+                // 将十六进制密钥转换为 ArrayBuffer
+                const keyBuffer = hexToArrayBuffer(hexKey);
+
+                // 检查密钥长度 (AES-256 需要 32 字节)
+                if (keyBuffer.byteLength !== 32) {
+                    throw new Error(`密钥长度错误，期望32字节，实际${keyBuffer.byteLength}字节`);
+                }
+
+                // 导入密钥
+                const cryptoKey = await crypto.subtle.importKey(
+                    'raw',
+                    keyBuffer,
+                    { name: 'AES-GCM' },
+                    false,
+                    ['encrypt']
+                );
+
+                // 将明文转换为 Uint8Array
+                const encoder = new TextEncoder();
+                const plaintextBuffer = encoder.encode(plaintext);
+
+                // 加密
+                const encryptedBuffer = await crypto.subtle.encrypt(
+                    {
+                        name: 'AES-GCM',
+                        iv: iv,
+                        tagLength: 128 // 16 字节的认证标签
+                    },
+                    cryptoKey,
+                    plaintextBuffer
+                );
+
+                // 组合 iv + 密文（密文已包含认证标签）
+                const resultBuffer = new Uint8Array(iv.length + encryptedBuffer.byteLength);
+                resultBuffer.set(iv, 0);
+                resultBuffer.set(new Uint8Array(encryptedBuffer), iv.length);
+
+                // 转换为 base64
+                return arrayBufferToBase64(resultBuffer);
+            } catch (error) {
+                throw new Error(`AES 加密失败: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+
+        /**
+         * 使用十六进制密钥进行 AES-256-GCM 解密（使用 Web Crypto API）
+         */
+        async function decryptGCM(ciphertext, hexKey) {
+            try {
+                // 解码 base64
+                const data = base64ToArrayBuffer(ciphertext);
+
+                // 将十六进制密钥转换为 ArrayBuffer
+                const keyBuffer = hexToArrayBuffer(hexKey);
+
+                // 检查密钥长度 (AES-256 需要 32 字节)
+                if (keyBuffer.byteLength !== 32) {
+                    throw new Error(`密钥长度错误，期望32字节，实际${keyBuffer.byteLength}字节`);
+                }
+
+                // 检查数据长度 (至少需要 iv + authTag)
+                if (data.byteLength < 28) { // 12 (iv) + 16 (authTag) = 28
+                    throw new Error('密文数据太短');
+                }
+
+                // 提取 IV (前 12 字节)
+                const iv = data.slice(0, 12);
+
+                // 提取密文（包含认证标签，从第 12 字节到结尾）
+                const encryptedData = data.slice(12);
+
+                // 导入密钥
+                const cryptoKey = await crypto.subtle.importKey(
+                    'raw',
+                    keyBuffer,
+                    { name: 'AES-GCM' },
+                    false,
+                    ['decrypt']
+                );
+
+                // 解密
+                const decryptedBuffer = await crypto.subtle.decrypt(
+                    {
+                        name: 'AES-GCM',
+                        iv: iv,
+                        tagLength: 128 // 16 字节的认证标签
+                    },
+                    cryptoKey,
+                    encryptedData
+                );
+
+                // 将解密后的 ArrayBuffer 转换为字符串
+                const decoder = new TextDecoder();
+                return decoder.decode(decryptedBuffer);
+            } catch (error) {
+                throw new Error(`AES 解密失败: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+
+        /**
+         * 生成随机 AES-256 密钥 (十六进制格式)
+         */
+        function generateAESKey() {
+            const key = randomBytes(32); // 32 字节 = 256 位
+            return arrayToHex(key);
+        }
+
+           // ==================== Crypto Store ====================
+
+        /**
+         * 获取当前用户的签名密钥
+         */
+        function queryCurrentSigKey() {
+            const userStore = useUserStore();
+            if (!userStore.last?.address) {
+                return null;
+            }
+
+            try {
+                const signKeysData = localStorage.getItem('signKeys');
+                if (!signKeysData) {
+                    return null;
+                }
+
+                const signKeys = JSON.parse(signKeysData);
+                const signData = signKeys.find(item => item.address === userStore.last.address);
+                return signData ? signData.sigKey : null;
+            } catch (error) {
+                console.error('读取 signKeys 失败:', error);
+                return null;
+            }
+        }
+
+        /**
+         * 签名消息并存储到 localStorage
+         */
+        async function signMessageAndStore() {
+            try {
+                const userStore = useUserStore();
+
+                if (!userStore.last?.address) {
+                    throw new Error('用户地址不存在');
+                }
+
+                if (!window.metaidwallet?.signMessage) {
+                    throw new Error('metaidwallet.signMessage 方法不可用');
+                }
+
+                const message = userStore.last.address;
+                const { signature } = await window.metaidwallet.signMessage(message);
+
+                // 从 localStorage 获取现有的 signKeys 数组
+                const existingSignKeys = localStorage.getItem('signKeys');
+                let signKeys = existingSignKeys ? JSON.parse(existingSignKeys) : [];
+
+                // 检查是否已存在相同地址的签名
+                const existingIndex = signKeys.findIndex(item => item.address === message);
+                const signItem = {
+                    address: message,
+                    sigKey: signature.signature.slice(0, 64)
+                };
+
+                if (existingIndex >= 0) {
+                    // 更新现有签名
+                    signKeys[existingIndex] = signItem;
+                } else {
+                    // 添加新签名
+                    signKeys.push(signItem);
+                }
+
+                // 存储到 localStorage
+                localStorage.setItem('signKeys', JSON.stringify(signKeys));
+
+                return signature.signature.slice(0, 64);
+            } catch (error) {
+                console.error('签名消息失败:', error);
+                throw error;
+            }
+        }
+
+        // ==================== Pinia Stores ====================
+
+        // Root Store - 根状态管理
+        const useRootStore = defineStore('root', {
+            state: () => ({
+                isWebView: false
+            }),
+            actions: {
+                // 检查是否在WebView中
+                checkWebViewBridge() {
+                    const UA = window.navigator.userAgent.toLowerCase();
+                    const isAndroid = !!(UA && UA.indexOf('android') > 0);
+                    const isIOS = !!(UA && /iphone|ipad|ipod|ios/.test(UA));
+
+                    if (isIOS || isAndroid) {
+                        if (window?.navigator) {
+                            const userAgent = window?.navigator?.userAgent || '';
+                            if (userAgent === 'IDChat-iOS' || userAgent === 'IDChat-Android') {
+                                this.isWebView = true;
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                },
+
+                // 检查BTC和MVC地址是否一致
+                async checkBtcAddressSameAsMvc() {
+                    const connectionStore = useConnectionStore();
+                    const mvcAddress = await connectionStore.adapter.getMvcAddress();
+                    const btcAddress = await connectionStore.adapter.getBtcAddress();
+
+                    if (mvcAddress && btcAddress && mvcAddress !== btcAddress) {
+                        throw new Error('BTC 地址与 MVC 地址不一致，请确保使用相同的钱包地址');
+                    }
+                }
+            }
+        });
+
+        // Network Store - 网络状态管理
+        const useNetworkStore = defineStore('network', {
+            getters: {
+                network: () => CONSTANTS.NETWORK,
+                isTestnet: () => CONSTANTS.NETWORK === 'testnet',
+            }
+        });
+
+        // Layout Store - 布局状态管理
+        const useLayoutStore = defineStore('layout', {
+            state: () => ({
+                isShowProfileEditModal: false
+            })
+        });
+
+        // User Store - 用户信息管理
+        const useUserStore = defineStore('user', {
+            state: () => ({
+                last: useLocalStorage('user-info', {
+                    address: '',
+                    avatar: '',
+                    avatarId: '',
+                    background: '',
+                    bio: '',
+                    bioId: '',
+                    blocked: false,
+                    chainName: 'mvc',
+                    fdv: 0,
+                    followCount: 0,
+                    isInit: false,
+                    metaid: '',
+                    name: '',
+                    nameId: '',
+                    nftAvatar: '',
+                    nftAvatarId: '',
+                    number: 0,
+                    pdv: 0,
+                    pinId: '',
+                    soulbondToken: '',
+                    unconfirmed: '',
+                    chatpubkey: '',
+                })
+            }),
+            getters: {
+                has: (state) => !!state.last,
+                isAuthorized: (state) => {
+                    const connectedStore = useConnectionStore();
+                    return !!(state.last.address && state.last.metaid && connectedStore.last.status === 'connected');
+                }
+            },
+            actions: {
+                async updateUserInfo(userInfo) {
+                    this.last = { ...this.last, ...userInfo };
+                },
+
+                async setUserInfo(address) {
+                    if (!address) return this.last;
+
+                    try {
+                        const userRes = await manApi.get(`/info/address/${address}`);
+                        if (userRes) {
+                            this.last = userRes;
+
+                            // 如果没有用户名，显示编辑资料模态框
+                            if (!this.last.name) {
+                                const layoutStore = useLayoutStore();
+                                layoutStore.isShowProfileEditModal = true;
+                            }
+                        }
+                        return this.last;
+                    } catch (e) {
+                        const { showToast } = useToast();
+                        showToast(e.message, 'error');
+                        return this.last;
+                    }
+                },
+
+                clearUserInfo() {
+                    this.last = {
+                        address: '',
+                        avatar: '',
+                        avatarId: '',
+                        background: '',
+                        bio: '',
+                        bioId: '',
+                        blocked: false,
+                        chainName: 'mvc',
+                        fdv: 0,
+                        followCount: 0,
+                        isInit: false,
+                        metaid: '',
+                        name: '',
+                        nameId: '',
+                        nftAvatar: '',
+                        nftAvatarId: '',
+                        number: 0,
+                        pdv: 0,
+                        pinId: '',
+                        soulbondToken: '',
+                        unconfirmed: '',
+                        chatpubkey: '',
+                    };
+                }
+            }
+        });
+
+        // Credentials Store - 凭证管理
+        const useCredentialsStore = defineStore('credentials', {
+            state: () => ({
+                credentials: useLocalStorage('credentials', []),
+                signing: false
+            }),
+            getters: {
+                getByAddress: (state) => (address) => {
+                    return state.credentials.find(s => s.address === address);
+                },
+                has: (state) => (address) => {
+                    return !!state.credentials.find(s => s.address === address);
+                },
+                get: (state) => {
+                    const connectionStore = useConnectionStore();
+                    const connected = connectionStore.connected;
+                    const address = connectionStore.getAddress;
+                    const credential = state.credentials.find(s => s.address === address);
+                    const ready = connected && !!credential;
+                    return ready ? credential : false;
+                },
+                ready: (state) => {
+                    const connectionStore = useConnectionStore();
+                    const connected = connectionStore.connected;
+                    const address = connectionStore.getAddress;
+                    const credential = state.credentials.find(s => s.address === address);
+                    return connected && !!credential;
+                }
+            },
+            actions: {
+                add({ publicKey, signature, address }) {
+                    if (this.credentials.find(s => s.address === address)) return;
+                    this.credentials.push({ publicKey, signature, address });
+                },
+
+                remove(address) {
+                    this.credentials = this.credentials.filter(s => s.address !== address);
+                },
+
+                clear() {
+                    this.credentials = [];
+                },
+
+                async sign() {
+                    const connectionStore = useConnectionStore();
+                    const connection = connectionStore.last;
+
+                    if (!connection.address || connection.status === 'disconnected') {
+                        throw new Error('Please connect to a wallet first.');
+                    }
+
+                    const address = connectionStore.getAddress;
+                    const credential = this.getByAddress(address);
+                    if (credential) return credential;
+
+                    this.signing = true;
+
+                    const message = CONSTANTS.SIGNING_MESSAGE;
+                    let publicKey = connection.pubKey;
+                    let signature = '';
+
+                    try {
+                        publicKey = await connectionStore.adapter.getMvcPublickey();
+                        signature = await connectionStore.adapter.signMessage(message);
+
+                        this.add({ publicKey, signature, address });
+                        return { publicKey, signature, address };
+                    } catch (e) {
+                        this.signing = false;
+                        throw e;
+                    }
+                },
+
+                async login() {
+                    const connectionStore = useConnectionStore();
+                    const synced = await connectionStore.sync();
+                    if (!synced) return false;
+
+                    const credential = await this.sign();
+                    if (!credential) return false;
+
+                    const userStore = useUserStore();
+                    await userStore.setUserInfo(credential.address);
+                    return credential;
+                }
+            }
+        });
+
+        // Chain Store - 费率管理
+        const useChainStore = defineStore('chain', {
+            state: () => ({
+                state: useLocalStorage('chain-fee-rates', {
+                    btc: {
+                        fastestFee: 1,
+                        halfHourFee: 1,
+                        hourFee: 1,
+                        economyFee: 1,
+                        minimumFee: 1,
+                        customizeFee: 1,
+                        selectedFeeType: 'economyFee',
+                        lastUpdated: 0,
+                    },
+                    mvc: {
+                        fastestFee: 1,
+                        halfHourFee: 1,
+                        hourFee: 1,
+                        economyFee: 1,
+                        minimumFee: 1,
+                        customizeFee: 1,
+                        selectedFeeType: 'economyFee',
+                        lastUpdated: 0,
+                    },
+                    currentChain: 'mvc',
+                })
+            }),
+            actions: {
+                async fetchFeeRates(url) {
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return await response.json();
+                    } catch (error) {
+                        console.error('Failed to fetch fee rates:', error);
+                        throw error;
+                    }
+                },
+
+                async updateBtcFeeRate() {
+                    try {
+                        const feeRates = await this.fetchFeeRates(CONSTANTS.BTC_FEE_RATE_URL);
+                        this.state.btc.fastestFee = feeRates.fastestFee;
+                        this.state.btc.halfHourFee = feeRates.halfHourFee;
+                        this.state.btc.hourFee = feeRates.hourFee;
+                        this.state.btc.economyFee = feeRates.economyFee;
+                        this.state.btc.minimumFee = feeRates.minimumFee;
+                        this.state.btc.lastUpdated = Date.now();
+                    } catch (error) {
+                        console.error('Failed to update BTC fee rates:', error);
+                    }
+                },
+
+                async updateMvcFeeRate() {
+                    try {
+                        const feeRates = await this.fetchFeeRates(CONSTANTS.MVC_FEE_RATE_URL);
+                        this.state.mvc.fastestFee = feeRates.fastestFee;
+                        this.state.mvc.halfHourFee = feeRates.halfHourFee;
+                        this.state.mvc.hourFee = feeRates.hourFee;
+                        this.state.mvc.economyFee = 1;
+                        this.state.mvc.minimumFee = feeRates.minimumFee;
+                        this.state.mvc.lastUpdated = Date.now();
+                    } catch (error) {
+                        console.error('Failed to update MVC fee rates:', error);
+                    }
+                },
+
+                async updateAllFeeRates() {
+                    await Promise.allSettled([this.updateBtcFeeRate(), this.updateMvcFeeRate()]);
+                },
+
+                setBtcCustomizeFee(feeRate) {
+                    this.state.btc.customizeFee = feeRate;
+                    this.state.btc.lastUpdated = Date.now();
+                },
+
+                setMvcCustomizeFee(feeRate) {
+                    this.state.mvc.customizeFee = feeRate;
+                    this.state.mvc.lastUpdated = Date.now();
+                },
+
+                setBtcFeeType(feeType) {
+                    this.state.btc.selectedFeeType = feeType;
+                },
+
+                setMvcFeeType(feeType) {
+                    this.state.mvc.selectedFeeType = feeType;
+                },
+
+                setCurrentChain(chain) {
+                    this.state.currentChain = chain;
+                },
+
+                btcFeeRate() {
+                    return this.state.btc[this.state.btc.selectedFeeType];
+                },
+
+                mvcFeeRate() {
+                    return this.state.mvc[this.state.mvc.selectedFeeType];
+                }
+            }
+        });
+
+        // Approved Store - 支付授权管理
+        const useApprovedStore = defineStore('approved', {
+            state: () => ({
+                last: useLocalStorage('last-approved', {
+                    isEnabled: true,
+                    isApproved: false,
+                    autoPaymentAmount: 10000,
+                })
+            }),
+            getters: {
+                has: (state) => !!state.last,
+                canUse: (state) => state.last.isEnabled && state.last.isApproved,
+                canApproved: (state) => state.last.isEnabled === true && state.last.isApproved === false
+            },
+            actions: {
+                async getPaymentStatus() {
+                    const connectionStore = useConnectionStore();
+                    const res = await connectionStore.adapter.autoPaymentStatus();
+                    this.last = res;
+                },
+
+                async getAutoPayment() {
+                    if (this.canApproved) {
+                        const connectionStore = useConnectionStore();
+                        const res = await connectionStore.adapter.autoPayment();
+                        if (res.message === "Auto payment approved") {
+                            this.last.isApproved = true;
+                        }
+                    }
+                },
+
+                clear() {
+                    if (!this.last) return;
+                    this.last.isEnabled = true;
+                    this.last.isApproved = false;
+                    this.last.autoPaymentAmount = 10000;
+                }
+            }
+        });
+
+        // Connection Store - 钱包连接管理
+        const useConnectionStore = defineStore('connection', {
+            state: () => ({
+                last: useLocalStorage('last-connection', {
+                    wallet: 'metalet',
+                    status: 'disconnected',
+                    address: '',
+                    pubKey: '',
+                })
+            }),
+            getters: {
+                has: (state) => !!state.last,
+                connected: (state) => state.last.status === 'connected' && !!state.last.address,
+                getAddress: (state) => state.last.address,
+                isTaproot: (state) => state.last.address.startsWith('bc1p') || state.last.address.startsWith('tb1p'),
+                getPubKey: (state) => state.last.pubKey,
+                provider: (state) => {
+                    if (!state.last) return null;
+                    return window.metaidwallet;
+                },
+                adapter: (state) => {
+                    if (!state.last) throw new Error('No connection');
+                    return getWalletAdapter(state.last.wallet);
+                }
+            },
+            actions: {
+                async connect(wallet) {
+                    const connection = this.last ? JSON.parse(JSON.stringify(this.last)) : {
+                        wallet,
+                        status: 'disconnected',
+                        address: '',
+                        pubKey: '',
+                    };
+
+                    try {
+                        let connectRes = await getWalletAdapter(wallet).connect();
+
+                        if (connectRes) {
+                            const networkStore = useNetworkStore();
+                            const appNetwork = networkStore.network;
+
+                            // 检查并切换网络
+                            const metaNetwork = await getWalletAdapter('metalet').getNetwork();
+                            if (metaNetwork !== appNetwork) {
+                                await getWalletAdapter('metalet').switchNetwork(appNetwork);
+                                connectRes = await getWalletAdapter('metalet').connect();
+                            }
+
+                            connection.address = connectRes.address;
+                            connection.pubKey = connectRes.pubKey;
+                            connection.status = 'connected';
+                            connection.wallet = wallet;
+
+                            this.last = connection;
+                            return this.last;
+                        }
+                    } catch (e) {
+                        const { showToast } = useToast();
+                        showToast(e.message, 'error');
+                        connection.status = 'disconnected';
+                        connection.wallet = wallet;
+                        this.last = connection;
+                    }
+
+                    return this.last;
+                },
+
+                async sync() {
+                    if (!this.connected) return;
+
+                    this.last.status = 'connected';
+                    this.last.address = await this.adapter.getAddress();
+                    this.last.pubKey = await this.adapter.getMvcPublickey();
+
+                    const networkStore = useNetworkStore();
+                    const appNetwork = networkStore.network;
+                    let networkSynced = true;
+
+                    const network = await this.adapter.getNetwork();
+                    if (network !== appNetwork) {
+                        networkSynced = false;
+                        this.disconnect();
+                    } else {
+                        const userStore = useUserStore();
+                        await userStore.setUserInfo(this.last.address);
+                    }
+
+                    if (networkSynced) {
+                        return this.last;
+                    }
+                },
+
+                async disconnect() {
+                    if (!this.last) return;
+
+                    this.last.status = 'disconnected';
+                    this.last.address = '';
+                    this.last.pubKey = '';
+                    this.last.wallet = 'metalet';
+
+                    const userStore = useUserStore();
+                    const approvedStore = useApprovedStore();
+                    const credentialsStore = useCredentialsStore();
+
+                    await userStore.clearUserInfo();
+                    credentialsStore.clear();
+
+                    if (window.metaidwallet?.smallPay) {
+                        await approvedStore.clear();
+                    }
+                }
+            }
+        });
+
+        // ==================== Metalet 钱包适配器 ====================
+        // 检查Metalet钱包
+        function checkMetalet() {
+            const connectionStore = useConnectionStore();
+            if (!window.metaidwallet && !connectionStore.connected) {
+                throw new Error('Please install the Metalet wallet extension first.');
+            }
+        }
+
+        // 检查Metalet状态
+        function checkMetaletStatus(res, actionName) {
+            if (res?.status) {
+                throw new Error(`Metalet ${actionName} status: ${res?.status}`);
+            }
+            return res;
+        }
+
+        // Metalet适配器对象
+        const getWalletAdapter = (wallet) => {
+            if (wallet !== 'metalet') {
+                throw new Error(`Unsupported wallet: ${wallet}`);
+            }
+
+            return {
+                async connect() {
+                    checkMetalet();
+                    const connectRes = await window.metaidwallet.connect();
+                    return checkMetaletStatus(connectRes, 'connect');
+                },
+
+                async getMvcAddress() {
+                    checkMetalet();
+                    const addressRes = await window.metaidwallet.getAddress();
+                    return checkMetaletStatus(addressRes, 'get address');
+                },
+
+                async getBtcAddress() {
+                    checkMetalet();
+                    const addressRes = await window.metaidwallet.btc.getAddress();
+                    return checkMetaletStatus(addressRes, 'get btc address');
+                },
+
+                async getMvcBalance() {
+                    checkMetalet();
+                    return await window.metaidwallet.getMvcBalance();
+                },
+
+                async signMvcMessage(message) {
+                    checkMetalet();
+                    const { signature } = await window.metaidwallet.signMessage({ message });
+                    const buf = Buffer.from(signature.signature, 'hex');
+                    return buf.toString('base64');
+                },
+
+                async getMvcPublickey() {
+                    checkMetalet();
+                    const MvcPubkey = await window.metaidwallet.getPublicKey();
+                    return checkMetaletStatus(MvcPubkey, 'get mvc publickey');
+                },
+
+                async getAddress() {
+                    checkMetalet();
+                    const addressRes = await window.metaidwallet.getAddress();
+                    return checkMetaletStatus(addressRes, 'get address');
+                },
+
+                async getNetwork() {
+                    checkMetalet();
+                    return await window.metaidwallet.getNetwork().then(({ network }) => {
+                        if (network === 'mainnet') {
+                            return 'livenet';
+                        }
+                        return 'testnet';
+                    });
+                },
+
+                async switchNetwork(network) {
+                    checkMetalet();
+                    return await window.metaidwallet.switchNetwork(network === 'livenet' ? 'mainnet' : 'testnet').then((res) => {
+                        if (res.status === 'canceled') {
+                            throw new Error('Switch network canceled');
+                        }
+                        if (res.network === 'mainnet') {
+                            return 'livenet';
+                        }
+                        return 'testnet';
+                    });
+                },
+
+                async disconnect() {},
+
+                async signMessage(message) {
+                    checkMetalet();
+                    const messageBase64 = await window.metaidwallet.btc.signMessage(message);
+                    return checkMetaletStatus(messageBase64, 'get signature');
+                },
+
+                async autoPaymentStatus() {
+                    checkMetalet();
+                    return await window.metaidwallet.autoPaymentStatus();
+                },
+
+                async autoPayment() {
+                    checkMetalet();
+                    return await window.metaidwallet.autoPayment();
+                }
+            };
+        };
+
+        // ==================== Connection Modal State ====================
+        const useConnectionModal = createGlobalState(() => {
+            const isConnectionModalOpen = ref(false);
+            const isWalletMissingModalOpen = ref(false);
+            const missingWallet = ref();
+
+            const openConnectionModal = () => {
+                isConnectionModalOpen.value = true;
+            };
+
+            const closeConnectionModal = () => {
+                isConnectionModalOpen.value = false;
+            };
+
+            const openWalletMissingModal = () => {
+                isWalletMissingModalOpen.value = true;
+            };
+
+            const closeWalletMissingModal = () => {
+                isWalletMissingModalOpen.value = false;
+            };
+
+            const setMissingWallet = (wallet) => {
+                missingWallet.value = wallet;
+                openWalletMissingModal();
+            };
+
+            return {
+                isConnectionModalOpen,
+                openConnectionModal,
+                closeConnectionModal,
+                isWalletMissingModalOpen,
+                openWalletMissingModal,
+                closeWalletMissingModal,
+                missingWallet,
+                setMissingWallet,
+            };
+        });
+
+        // ==================== MetaFs 核心方法 ====================
+        /**
+ * Complete direct upload flow
+ */
+async function uploadFileToChainDirect(file) {
+    try {
+      
+
+        // 2. Build ContentType
+        let contentType = file.type || 'application/octet-stream';
+        if (!contentType.includes(';binary')) {
+            contentType = contentType + ';binary';
+        }
+        
+        // 3. Estimate upload fee
+        const estimatedFee = await estimateUploadFee(file);
+        console.log('💰 Estimated fee:', estimatedFee, 'satoshis');
+        
+        // 4. Get UTXOs
+        const utxos = await getWalletUTXOs(estimatedFee);
+        console.log('✅ Got', utxos.utxos.length, 'UTXO(s), total:', utxos.totalAmount, 'satoshis');
+        
+        // 5. Merge UTXOs if needed
+        let finalUtxo = null;
+        let mergeTxHex = '';
+        
+        if (utxos.utxos.length > 1) {
+            console.log('⚠️ Multiple UTXOs detected, merging...');
+            const mergeResult = await mergeUTXOs(utxos, estimatedFee);
+            finalUtxo = {
+                utxos: mergeResult.utxos,
+                totalAmount: mergeResult.totalAmount
+            };
+            mergeTxHex = mergeResult.mergeTxHex || '';
+            console.log('✅ UTXOs merged successfully');
+        } else {
+            finalUtxo = {
+                utxos: utxos.utxos,
+                totalAmount: utxos.totalAmount
+            };
+            console.log('✅ Single UTXO, no merge needed');
+        }
+        
+        // 6. Build and sign base transaction
+        console.log('Please confirm signature in wallet...');
+        const preTxHex = await buildAndSignBaseTx(finalUtxo);
+        console.log('✅ Base transaction signed');
+        
+        // 7. Direct upload (one-step: add OP_RETURN + calculate change + broadcast)
+        const uploadResult = await directUpload(file,preTxHex, finalUtxo.totalAmount, mergeTxHex);
+        
+        console.log('✅ File uploaded successfully!');
+        console.log('TxID:', uploadResult.txId);
+        console.log('PinID:', uploadResult.pinId);
+        
+        return uploadResult;
+        
+    } catch (error) {
+        console.error('❌ Direct upload failed:', error.message);
+        throw error;
+    }
+}
+
+
+async function estimateUploadFee(file) {
+    // Base transaction size estimation
+    const baseSize = 200; // Basic transaction overhead
+    const inputSize = 150; // Per input size (with signature)
+    const outputSize = 34; // Per output size
+    const opReturnOverhead = 50; // OP_RETURN script overhead
+     const chainStore = useChainStore();
+      
+    // File size
+    const fileSize = file.size;
+    
+    // Calculate OP_RETURN output size
+    // MetaID protocol: metaid + operation + path + encryption + version + contentType + content
+    const path = '/file'
+    const fileHost = '';
+    const finalPath = fileHost ? fileHost + ':' + path : path;
+    
+    const metadataSize = 6 + 10 + finalPath.length + 10 + 10 + 50; // Rough estimate
+    const opReturnSize = opReturnOverhead + metadataSize + fileSize;
+    
+    // Total transaction size estimation (1 input, 2 outputs: change + OP_RETURN)
+    const estimatedTxSize = baseSize + inputSize + outputSize * 2 + opReturnSize;
+    
+    // Get fee rate
+    const feeRate =chainStore.mvcFeeRate() || 1;
+    
+    // Calculate fee
+    const estimatedFee = Math.ceil(estimatedTxSize * feeRate);
+    
+    // Add safety margin (20%)
+    const feeWithMargin = Math.ceil(estimatedFee * 1.2);
+    
+    console.log('Estimated tx size:', estimatedTxSize, 'bytes');
+    console.log('Fee rate:', feeRate, 'sat/byte');
+    console.log('Estimated fee (with 20% margin):', feeWithMargin, 'satoshis');
+    
+    return feeWithMargin;
+}
+
+async function getWalletUTXOs(requiredAmount) {
+    try {
+        // Get UTXOs from wallet
+        const utxos = await window.metaidwallet.getUtxos();
+        
+        if (!utxos || utxos.length === 0) {
+            throw new Error('No available UTXOs in wallet');
+        }
+
+        // Filter UTXOs: only select UTXOs > 600 satoshis (to ensure change output is possible)
+        const filler = 600;
+        const fillerUtxos = utxos.filter(utxo => utxo.value > filler);
+        
+        if (!fillerUtxos || fillerUtxos.length === 0) {
+            throw new Error('No UTXOs larger than 600 satoshis available in wallet');
+        }
+
+        // Sort UTXOs by amount (descending)
+        const sortedUtxos = fillerUtxos.sort((a, b) => b.value - a.value);
+        
+      
+        
+        // Select UTXOs to meet required amount
+        let selectedUtxos = [];
+        let totalAmount = 0;
+        
+        for (const utxo of sortedUtxos) {
+            // Convert address to script
+            let scriptHex = mvc.Script.buildPublicKeyHashOut(utxo.address).toHex();
+            selectedUtxos.push({
+                txId: utxo.txid,
+                outputIndex: utxo.outIndex,
+                script: scriptHex,
+                satoshis: utxo.value
+            });
+            totalAmount += utxo.value;
+            
+            // Add buffer for change output (1 satoshi for receiver)
+            if (totalAmount >= requiredAmount + 1) {
+                break;
+            }
+        }
+
+        if (totalAmount < requiredAmount + 1) {
+            throw new Error(`Insufficient balance! Need ${requiredAmount + 1} satoshis, but only have ${totalAmount} satoshis`);
+        }
+        
+        return {
+            utxos: selectedUtxos,
+            totalAmount: totalAmount
+        };
+    } catch (error) {
+        console.error('Failed to get UTXOs:', error);
+        throw new Error(`Failed to get UTXOs: ${error.message}`);
+    }
+}
+
+async function mergeUTXOs(utxoData, estimatedFee) {
+    try {
+        // Check if pay method is available
+        if (typeof window.metaidwallet.pay !== 'function') {
+            throw new Error('Wallet does not support pay method');
+        }
+        
+        // Get meta-contract library for TxComposer
+       
+        
+        
+        // Create merge transaction - we only specify the output
+        // pay method will automatically select inputs, add change, and sign
+        const mergeTx = new mvc.Transaction();
+        mergeTx.version = 10;
+        
+        // Add single output to ourselves (this will merge all UTXOs into one)
+        mergeTx.to(currentAddress, estimatedFee); 
+        
+        // Create TxComposer for pay method
+        const txComposer = new TxComposer(mergeTx);
+        const txComposerSerialize = txComposer.serialize();
+        
+        // Build pay params
+        const feeRate = chainStore.mvcFeeRate() || 1;
+        const payParams = {
+            transactions: [
+                {
+                    txComposer: txComposerSerialize,
+                    message: 'Merge UTXOs',
+                }
+            ],
+            feeb: feeRate,
+        };
+        
+        // Call pay method - it will auto select inputs, add change, and sign
+        const payResult = await window.metaidwallet.pay(payParams);
+        
+        // Deserialize the payed transaction
+        const payedTxComposerStr = payResult.payedTransactions[0];
+        const payedTxComposer = TxComposer.deserialize(payedTxComposerStr);
+        
+        // Get signed transaction hex
+        const signedMergeTxHex = payedTxComposer.getRawHex();
+        const mergeTxId = payedTxComposer.getTxId();
+        
+        // Parse the transaction to get output info
+        const parsedMergeTx = new mvc.Transaction(signedMergeTxHex);
+        
+        // Find the output that goes to our address (the merged UTXO)
+        let mergedOutputIndex = -1;
+        let mergedOutputAmount = 0;
+        
+        for (let i = 0; i < parsedMergeTx.outputs.length; i++) {
+            const output = parsedMergeTx.outputs[i];
+            try {
+                const addr = output.script.toAddress(mvc.Networks.livenet);
+                if (addr && addr.toString() === currentAddress) {
+                    mergedOutputIndex = i;
+                    mergedOutputAmount = output.satoshis;
+                    break;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+        
+        if (mergedOutputIndex === -1) {
+            // Fallback: use the first output
+            mergedOutputIndex = 0;
+            mergedOutputAmount = parsedMergeTx.outputs[0].satoshis;
+        }
+        
+        // Create new UTXO info from merge transaction
+        const newUtxo = {
+            txId: mergeTxId,
+            outputIndex: mergedOutputIndex,
+            script: parsedMergeTx.outputs[mergedOutputIndex].script.toHex(),
+            satoshis: mergedOutputAmount
+        };
+        
+        return {
+            utxos: [newUtxo],
+            totalAmount: newUtxo.satoshis,
+            mergeTxId: mergeTxId,
+            mergeTxHex: signedMergeTxHex
+        };
+        
+    } catch (error) {
+        console.error('Failed to merge UTXOs:', error);
+        throw new Error(`Failed to merge UTXOs: ${error.message}`);
+    }
+}
+
+async function buildAndSignBaseTx(utxoData) {
+    try {
+        // Validate: must have exactly one UTXO for SIGHASH_SINGLE
+        if (!utxoData.utxos || utxoData.utxos.length !== 1) {
+            throw new Error(`SIGHASH_SINGLE requires exactly 1 UTXO, got ${utxoData.utxos ? utxoData.utxos.length : 0}`);
+        }
+       
+         const userStore = useUserStore();
+        
+       
+        
+        const utxo = utxoData.utxos[0]; // Single UTXO
+        
+        // Create new transaction
+        const tx = new mvc.Transaction();
+        tx.version = 10; // MVC version
+        
+        // Add single input
+        tx.from({
+            txId: utxo.txId,
+            outputIndex: utxo.outputIndex,
+            script: utxo.script,
+            satoshis: utxo.satoshis
+        });
+        
+        // Add receiver output (1 satoshi)
+        tx.to(userStore.last.address, 1);
+        
+        // Serialize to hex
+        const txHex = tx.toString();
+        
+        // Sign the single input with SIGHASH_SINGLE
+        const signResult = await window.metaidwallet.signTransaction({
+            transaction: {
+                txHex: tx.toString(),
+                address: userStore.last.address,
+                inputIndex: 0,
+                scriptHex: utxo.script,
+                satoshis: utxo.satoshis,
+                sigtype: 0x3 | 0x80 | 0x40 // SIGHASH_SINGLE | ANYONE_CAN_PAY
+            }
+        });
+        
+        if (!signResult || !signResult.signature || !signResult.signature.sig) {
+            throw new Error('Failed to get signature');
+        }
+        
+        // Build unlocking script (scriptSig) from signature
+        const sig = signResult.signature.sig;
+        const publicKey = signResult.signature.publicKey;
+        
+        // Build P2PKH unlocking script: <sig> <pubkey>
+        const unlockingScript = mvc.Script.buildPublicKeyHashIn(
+            publicKey,
+            mvc.crypto.Signature.fromTxFormat(Buffer.from(sig, 'hex')).toDER(),
+            0x3 | 0x80 | 0x40 // SIGHASH_SINGLE | ANYONE_CAN_PAY
+        );
+
+        // Set the unlocking script for this input
+        tx.inputs[0].setScript(unlockingScript);
+        
+        // Get final signed transaction hex
+        const signedTxHex = tx.toString();
+        
+        return signedTxHex;
+        
+    } catch (error) {
+        console.error('Failed to build/sign MVC transaction:', error);
+        throw new Error(`Failed to build/sign MVC transaction: ${error.message}`);
+    }
+}
+
+async function directUpload(file,preTxHex, totalInputAmount, mergeTxHex) {
+    try {
+         const chainStore = useChainStore();
+         const userStore = useUserStore();
+        
+        // Build contentType
+        let contentType = file.type || 'application/octet-stream';
+        if (!contentType.includes(';binary')) {
+            contentType = contentType + ';binary';
+        }
+        
+        const path = '/file';
+        
+        // Add host information to path if provided
+        const fileHost ='';
+        let finalPath = path;
+        if (fileHost) {
+            finalPath = fileHost + ':' + path;
+        }
+        
+        const formData = new FormData();
+        formData.append('file',file);
+        formData.append('path',finalPath);
+        if (mergeTxHex) {
+            formData.append('mergeTxHex',mergeTxHex);
+        }
+        formData.append('preTxHex',preTxHex);
+        formData.append('operation','create');
+        formData.append('contentType',contentType);
+        formData.append('metaId',userStore.last.metaid);
+        formData.append('address',userStore.last.address);
+        formData.append('changeAddress',userStore.last.address);
+        formData.append('feeRate',chainStore.mvcFeeRate().toString() || '1');
+        formData.append('totalInputAmount',totalInputAmount.toString());
+        
+        const response = await fetch(`${CONSTANTS.METAFS_API_BASE}/api/v1/files/direct-upload`, {
+            method: 'POST',
+            body: formData,
+          
+            mode: 'cors',
+            headers: {
+        // 不要手动设置 Content-Type，FormData 会自动设置正确的 boundary
+        // 'Content-Type': 'multipart/form-data' // ← 删除这行
+    },
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.code !== 0) {
+            throw new Error(result.message);
+        }
+        
+        console.log('DirectUpload success!');
+        console.log('TxID:', result.data.txId);
+        console.log('Status:', result.data.status);
+        
+        return result.data;
+    } catch (error) {
+        console.error('DirectUpload failed:', error);
+        throw new Error(`DirectUpload failed: ${error.message}`);
+    }
+}
+
+        // ==================== Vue 组件定义 ====================
+
+        // Toast/Alert 组件
+        const ToastContainer = {
+            template: `
+                <div class="toast toast-top toast-end z-[10000]">
+                    <div v-for="alert in alerts" :key="alert.id"
+                         :class="['alert', alertClass(alert.type)]"
+                         class="shadow-lg">
+                        <span>{{ alert.message }}</span>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const { alerts } = useToast();
+
+                const alertClass = (type) => {
+                    const classes = {
+                        'success': 'alert-success',
+                        'error': 'alert-error',
+                        'warning': 'alert-warning',
+                        'info': 'alert-info',
+                    };
+                    return classes[type] || 'alert-info';
+                };
+
+                return { alerts, alertClass };
+            }
+        };
+
+        // 连接钱包模态框组件
+        const ConnectWalletModal = {
+            template: `
+                <div v-if="isConnectionModalOpen" class="modal modal-open">
+                    <div class="modal-box relative">
+                        <button v-if="!loading"
+                                class="btn btn-sm btn-circle absolute right-2 top-2"
+                                @click="closeConnectionModal">
+                            ✕
+                        </button>
+
+                        <h3 class="font-bold text-lg mb-4">连接钱包</h3>
+
+                        <div class="space-y-3">
+                            <button class="btn btn-outline w-full justify-start gap-3"
+                                    @click="connectMetalet"
+                                    :disabled="loading">
+                                <div class="w-10 h-10 flex items-center justify-center">
+                                   
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" width="130" height="130" viewBox="0 0 130 130"><defs><linearGradient x1=".5" y1="0" x2=".5" y2="1" id="a"><stop offset="30.205%" stop-color="#C7FCFF"/><stop offset="100%" stop-color="#FFF"/></linearGradient><linearGradient x1="1.012" y1=".5" x2=".006" y2=".5" id="b"><stop offset="0%" stop-color="#171AFF"/><stop offset="100%" stop-color="#72F5F6"/></linearGradient><linearGradient x1="1.012" y1=".5" x2=".006" y2=".5" id="c"><stop offset="0%" stop-color="#171AFF"/><stop offset="100%" stop-color="#72F5F6"/></linearGradient></defs><path d="m24.917 40.083-16.25-22.75L43.333 26 65 22.75 86.667 26l34.667-8.667-16.25 22.75v23.834l10.833 11.916-2.167 8.667-6.5-3.25 8.667 10.833-2.167 9.75-15.167-7.583-3.25 8.667-10.833 6.5-4.333-6.5-5.417 5.416-9.75 4.334-9.75-4.334-5.417-5.416-4.333 6.5-10.833-6.5-3.25-8.667-15.167 7.583-2.167-9.75L22.75 81.25l-6.5 3.25-2.167-8.667 10.834-11.916V40.083Z" fill-rule="evenodd" fill="url(#a)"/><path d="m74.24 59.702 16.932-19.35a12.948 12.948 0 0 1 3.078 8.4c0 7.18-5.82 13-13 13a12.94 12.94 0 0 1-7.01-2.05Zm-35.412-19.35 16.932 19.35a12.94 12.94 0 0 1-7.01 2.05c-7.18 0-13-5.82-13-13 0-3.203 1.158-6.135 3.078-8.4Z" fill-rule="evenodd" fill="#FFF"/><path d="m77.877 55.546 9.658-11.039a7.583 7.583 0 0 1-9.658 11.038ZM42.465 44.507l9.658 11.039a7.583 7.583 0 0 1-9.658-11.038Z" fill-rule="evenodd" fill="#182A72"/><path d="m8.667 17.333 27.083 19.5 22.75 26L65 76.917l6.5-14.084 22.75-26 27.084-19.5L86.667 26 65 22.75 43.333 26 8.667 17.333Z" fill="url(#b)" opacity=".5"/><path d="M43.333 26 65 54.742 52 24.917 43.333 26ZM65 54.742 86.667 26l-8.603-1.083L65 54.742Z" fill="#EBFEFF"/><path d="M24.917 63.917V40.083l-16.25-22.75L43.333 26 65 22.75 86.667 26l28.682-7.17 5.985-1.497-3.586 5.02-12.665 17.73v23.834l10.834 11.916-1.173 4.692-.703 2.81-.291 1.165-3.665-1.832-2.835-1.418 5.963 7.454 2.704 3.38-1.272 5.724-.895 4.025-15.167-7.583-1.412 3.766-1.838 4.9-10.833 6.5-2.07-3.105-2.263-3.394-5.417 5.416-9.75 4.334-9.75-4.334-2.532-2.532-2.885-2.884-2.262 3.394-2.071 3.106-10.833-6.5-1.838-4.901-1.412-3.766-3.598 1.799-7.881 3.94-3.688 1.844-.894-4.025-1.273-5.725 2.704-3.38 5.963-7.453-2.835 1.418L16.25 84.5l-.291-1.164-.703-2.811-1.173-4.692 10.834-11.916Zm3.255-26.159-9.936-13.91 24.901 6.226L65 26.794l21.863 3.28 24.9-6.225-10.68 14.952v26.662l10.434 11.477-.438 1.752-18.33-9.164 18.848 23.558-.64 2.879-14.559-7.28-4.32 11.52-6.365 3.82-4.925-7.387-8.341 8.342L65 108.29l-7.447-3.31-8.341-8.342-4.925 7.386-6.365-3.819-4.32-11.52-14.559 7.28-.64-2.88L37.25 69.529l-18.329 9.164-.438-1.752 10.434-11.477V38.801l-.745-1.043Z" fill-rule="evenodd" fill="url(#c)"/><path d="m65 76.917-6.5-14.084L65 55.25l6.5 7.583L65 76.917Z" fill-rule="evenodd" fill="#182A72"/></svg>
+                                </div>
+                                <div class="text-left flex-1">
+                                    <div class="font-semibold">Metalet</div>
+                                    <span class="text-sm text-gray-500">Connect to Metalet Wallet</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const { isConnectionModalOpen, closeConnectionModal, setMissingWallet } = useConnectionModal();
+                const connectionStore = useConnectionStore();
+                const credentialsStore = useCredentialsStore();
+                const rootStore = useRootStore();
+                const { showToast } = useToast();
+                const loading = ref(false);
+
+                const connectMetalet = async () => {
+                    if (!window.metaidwallet) {
+                        setMissingWallet('metalet');
+                        return;
+                    }
+
+                    try {
+                        loading.value = true;
+                        const connection = await connectionStore.connect('metalet');
+
+                        if (connection?.status === 'connected') {
+                            await credentialsStore.login();
+                            await sleep(300);
+                            closeConnectionModal();
+                        }
+
+                        // 检查BTC和MVC地址是否一致
+                        rootStore.checkBtcAddressSameAsMvc()
+                            .catch(() => {
+                                showToast('BTC 地址与 MVC 地址不一致', 'warning');
+                            });
+                    } catch (err) {
+                        showToast(err.message, 'error');
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                return {
+                    isConnectionModalOpen,
+                    closeConnectionModal,
+                    connectMetalet,
+                    loading
+                };
+            }
+        };
+
+        // 用户头像组件
+        const UserAvatar = {
+            props: {
+                image: String,
+                metaId: String,
+                name: String
+            },
+            template: `
+                <div class="avatar">
+                    <div class="w-10 h-10 rounded-full">
+                        <img :src="avatarSrc" :alt="name || 'User'" class="user-avatar" />
+                    </div>
+                </div>
+            `,
+            setup(props) {
+                const avatarSrc = computed(() => {
+                    if (props.image) {
+                        return `${CONSTANTS.MAN_BASE_URL}${props.image}`;
+                    }
+                    // 默认头像
+                    return 'data:image/png;base64,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';
+                });
+
+                return { avatarSrc };
+            }
+        };
+
+        // ProfileEditModal - 用户资料编辑模态框组件
+        const ProfileEditModal = {
+            props: {
+                modelValue: Boolean
+            },
+            emits: ['update:modelValue'],
+            template: `
+                <div v-if="modelValue" class="modal modal-open">
+                    <div class="modal-box w-full max-w-[500px] relative">
+                        <!-- 关闭按钮 -->
+                        <button
+                            class="btn btn-sm btn-circle absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-14 bg-base-200 hover:bg-base-300"
+                            @click="closeModal">
+                            ✕
+                        </button>
+
+                        <h3 class="font-bold text-2xl text-center mb-2">Set Up Your Profile</h3>
+                        <p class="text-center text-base-content/60 mb-6">
+                            Make your account stand out — add a unique avatar and display name!
+                        </p>
+
+                        <!-- 头像上传区域 -->
+                        <div class="flex justify-center mb-6">
+                            <div class="relative">
+                                <input
+                                    ref="fileInput"
+                                    type="file"
+                                    @change="handleFileChange"
+                                    accept="image/jpeg,image/png"
+                                    class="hidden"
+                                    id="avatar-upload"
+                                />
+                                <label for="avatar-upload" class="cursor-pointer">
+                                    <img
+                                        :src="imageUrl || currentAvatar"
+                                        alt="Avatar Preview"
+                                        class="w-28 h-28 rounded-[33%] object-cover border-2 border-black"
+                                    />
+                                </label>
+                                <!-- 相机图标按钮 -->
+                                <button
+                                    type="button"
+                                    @click="triggerFileInput"
+                                    class="absolute bottom-4 right-0 w-6 h-6 rounded-full bg-primary hover:bg-primary-focus text-primary-content flex items-center justify-center transition-colors shadow-lg">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 用户名输入 -->
+                        <div class="form-control mb-4">
+                            <label class="label">
+                                <span class="label-text font-medium">User Name</span>
+                            </label>
+                            <input
+                                v-model="username"
+                                type="text"
+                                placeholder="What's Your MetaWeb User Name?"
+                                class="input input-bordered w-full"
+                            />
+                        </div>
+
+                        <!-- 个人简介输入 -->
+                        <div class="form-control mb-6">
+                            <label class="label">
+                                <span class="label-text font-medium">Profile</span>
+                            </label>
+                            <input
+                                v-model="profile"
+                                type="text"
+                                placeholder="Profile (Optional)"
+                                class="input input-bordered w-full"
+                            />
+                        </div>
+
+                        <!-- 提交按钮 -->
+                        <div class="flex justify-end">
+                            <button
+                                type="button"
+                                @click="save"
+                                :disabled="!hasChanges || loading"
+                                :class="['btn btn-circle', hasChanges && !loading ? 'btn-primary' : 'btn-disabled']">
+                                <svg v-if="!loading" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                                <span v-else class="loading loading-spinner"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup(props, { emit }) {
+                const userStore = useUserStore();
+                const { showToast } = useToast();
+
+                const fileInput = ref(null);
+                const username = ref('');
+                const profile = ref('');
+                const imageUrl = ref('');
+                const currentAvatar = ref('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"%3E%3Cpath d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/%3E%3C/svg%3E');
+                const imgRaw = ref(null);
+                const loading = ref(false);
+
+                // 监听用户头像变化
+                watch(
+                    () => userStore.last?.avatar,
+                    (newAvatar) => {
+                        if (newAvatar && newAvatar.startsWith('http')) {
+                            currentAvatar.value = newAvatar;
+                        }
+                    },
+                    { immediate: true }
+                );
+
+                // 监听模态框打开/关闭
+                watch(
+                    () => props.modelValue,
+                    (newVal) => {
+                        if (newVal) {
+                            // 模态框打开时初始化表单数据
+                            username.value = userStore.last?.name || '';
+                            profile.value = userStore.last?.bio || '';
+                            imageUrl.value = '';
+                            imgRaw.value = null;
+                        }
+                    }
+                );
+
+                // 计算是否有变更
+                const hasChanges = computed(() => {
+                    return (
+                        imageUrl.value ||
+                        username.value !== (userStore.last?.name || '') ||
+                        profile.value !== (userStore.last?.bio || '')
+                    );
+                });
+
+                // 触发文件选择
+                const triggerFileInput = () => {
+                    fileInput.value?.click();
+                };
+
+                // 处理文件选择
+                const handleFileChange = async (event) => {
+                    const target = event.target;
+                    const file = target.files?.[0];
+
+                    if (!file) return;
+
+                    // 验证文件类型
+                    if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
+                        showToast('Avatar picture must be JPG or PNG format!', 'error');
+                        return;
+                    }
+
+                    try {
+                        // 显示预览
+                        const reader = new FileReader();
+                        reader.addEventListener('load', () => {
+                            imageUrl.value = reader.result;
+                        });
+                        reader.readAsDataURL(file);
+                        imgRaw.value = file;
+                    } catch (error) {
+                        console.error('Failed to process image:', error);
+                        showToast('Failed to process image. Please try another image.', 'error');
+                    }
+                };
+
+                // 保存
+                const save = async () => {
+                    if (!hasChanges.value || loading.value) {
+                        showToast('No changes to save.', 'info');
+                        return;
+                    }
+
+                    loading.value = true;
+                    try {
+                        const values = {};
+
+                        // 处理头像
+                        if (imgRaw.value) {
+                            const fileList = [imgRaw.value];
+                            const [image] = await image2Attach(fileList);
+                            values.avatar = Buffer.from(image.data, 'hex').toString('base64');
+                        }
+
+                        // 处理用户名
+                        if (username.value !== userStore.last?.name) {
+                            values.name = username.value;
+                        }
+
+                        // 处理个人简介
+                        if (profile.value !== userStore.last?.bio) {
+                            values.bio = profile.value;
+                        }
+
+                        // 获取 ECDH 公钥（如果没有）
+                        if (!userStore.last?.chatpubkey) {
+                            const ecdh = await getEcdhPublickey();
+                            if (ecdh) {
+                                values.chatpubkey = ecdh.ecdhPubKey;
+                            }
+                        }
+
+                        // 调用创建或更新用户信息
+                        await createOrUpdateUserInfo({
+                            userData: values,
+                            oldUserData: {
+                                nameId: userStore.last?.nameId || '',
+                                bioId: userStore.last?.bioId || '',
+                                avatarId: userStore.last?.avatarId || '',
+                                chatpubkey: userStore.last?.chatpubkey || '',
+                            },
+                            options: {
+                                feeRate: 1,
+                                network: 'livenet',
+                                assistDomain: CONSTANTS.METASO_ASSET_API,
+                            },
+                        });
+
+                        // 如果是首次设置，获取 MVC 奖励
+                        if (!userStore.last.nameId) {
+                            const publicKey = await window.metaidwallet.btc.getPublicKey();
+                            const signature = await window.metaidwallet.btc.signMessage('metaso.network');
+                            await getMVCRewards(
+                                {
+                                    address: userStore.last.address,
+                                    gasChain: 'mvc',
+                                },
+                                {
+                                    'X-Public-Key': publicKey,
+                                    'X-Signature': signature,
+                                }
+                            );
+                        }
+
+                        // 更新用户信息
+                        await userStore.setUserInfo(userStore.last.address);
+                        showToast('Profile updated successfully!', 'success');
+                        emit('update:modelValue', false);
+                    } catch (error) {
+                        console.error('Failed to save profile changes:', error);
+                        showToast('Failed to save profile changes.', 'error');
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const closeModal = () => {
+                    if (!loading.value) {
+                        emit('update:modelValue', false);
+                    }
+                };
+
+                return {
+                    fileInput,
+                    username,
+                    profile,
+                    imageUrl,
+                    currentAvatar,
+                    loading,
+                    hasChanges,
+                    triggerFileInput,
+                    handleFileChange,
+                    save,
+                    closeModal,
+                };
+            }
+        };
+
+        // 费率模态框组件
+        const FeeModal = {
+            props: {
+                modelValue: Boolean
+            },
+            emits: ['update:modelValue', 'confirm'],
+            template: `
+                <div v-if="modelValue" class="modal modal-open">
+                    <div class="modal-box w-full max-w-2xl">
+                        <h3 class="font-bold text-lg mb-4">Fee Settings</h3>
+
+                        <!-- BTC Section -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3 cursor-pointer" @click="selectChain('btc')">
+                                <span class="text-2xl">₿</span>
+                                <div>
+                                    <div class="font-semibold">BTC Network</div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <button :class="['btn', selectedChain === 'btc' && selectedBTCFeeType === 'economyFee' ? 'btn-primary' : 'btn-outline']"
+                                        @click="selectFeeType('economyFee', 'btc')">
+                                    <div class="text-center">
+                                        <div class="font-semibold">ECO</div>
+                                        <div class="text-sm">{{ chainStore.state.btc.economyFee }} sat/vB</div>
+                                    </div>
+                                </button>
+
+                                <button :class="['btn', selectedChain === 'btc' && selectedBTCFeeType === 'halfHourFee' ? 'btn-primary' : 'btn-outline']"
+                                        @click="selectFeeType('halfHourFee', 'btc')">
+                                    <div class="text-center">
+                                        <div class="font-semibold">Normal</div>
+                                        <div class="text-sm">{{ chainStore.state.btc.halfHourFee }} sat/vB</div>
+                                    </div>
+                                </button>
+
+                                <button :class="['btn', selectedChain === 'btc' && selectedBTCFeeType === 'customizeFee' ? 'btn-primary' : 'btn-outline']"
+                                        @click="selectFeeType('customizeFee', 'btc')">
+                                    <div class="text-center">
+                                        <div class="font-semibold">Custom</div>
+                                        <input v-if="selectedChain === 'btc' && selectedBTCFeeType === 'customizeFee'"
+                                               v-model="customBTCValue"
+                                               type="number"
+                                               class="input input-sm w-16 text-center"
+                                               @click.stop
+                                               :min="1" />
+                                        <div v-else class="text-sm">{{ chainStore.state.btc.customizeFee }} sat/vB</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- MVC Section -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3 cursor-pointer" @click="selectChain('mvc')">
+                                <span class="text-2xl">Ⓜ</span>
+                                <div>
+                                    <div class="font-semibold">MVC Network</div>
+                                    <span class="badge badge-warning badge-sm">Bitcoin sidechain</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <button :class="['btn', selectedChain === 'mvc' && selectedMVCFeeType === 'economyFee' ? 'btn-primary' : 'btn-outline']"
+                                        @click="selectFeeType('economyFee', 'mvc')">
+                                    <div class="text-center">
+                                        <div class="font-semibold">ECO</div>
+                                        <div class="text-sm">{{ chainStore.state.mvc.economyFee }} sat/vB</div>
+                                    </div>
+                                </button>
+
+                                <button :class="['btn', selectedChain === 'mvc' && selectedMVCFeeType === 'fastestFee' ? 'btn-primary' : 'btn-outline']"
+                                        @click="selectFeeType('fastestFee', 'mvc')">
+                                    <div class="text-center">
+                                        <div class="font-semibold">High</div>
+                                        <div class="text-sm">{{ chainStore.state.mvc.fastestFee }} sat/vB</div>
+                                    </div>
+                                </button>
+
+                                <button :class="['btn', selectedChain === 'mvc' && selectedMVCFeeType === 'customizeFee' ? 'btn-primary' : 'btn-outline']"
+                                        @click="selectFeeType('customizeFee', 'mvc')">
+                                    <div class="text-center">
+                                        <div class="font-semibold">Custom</div>
+                                        <input v-if="selectedChain === 'mvc' && selectedMVCFeeType === 'customizeFee'"
+                                               v-model="customMVCValue"
+                                               type="number"
+                                               class="input input-sm w-16 text-center"
+                                               @click.stop />
+                                        <div v-else class="text-sm">{{ chainStore.state.mvc.customizeFee }} sat/vB</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="modal-action">
+                            <button class="btn" @click="$emit('update:modelValue', false)">Cancel</button>
+                            <button class="btn btn-primary" @click="handleConfirm">OK</button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup(props, { emit }) {
+                const chainStore = useChainStore();
+                const { showToast } = useToast();
+
+                const selectedChain = ref('btc');
+                const selectedBTCFeeType = ref(chainStore.state.btc.selectedFeeType);
+                const selectedMVCFeeType = ref(chainStore.state.mvc.selectedFeeType);
+                const customBTCValue = ref(chainStore.state.btc.customizeFee);
+                const customMVCValue = ref(chainStore.state.mvc.customizeFee);
+
+                const selectChain = (chain) => {
+                    selectedChain.value = chain;
+                };
+
+                const selectFeeType = (feeType, chain) => {
+                    selectedChain.value = chain;
+                    if (chain === 'btc') {
+                        selectedBTCFeeType.value = feeType;
+                    } else {
+                        selectedMVCFeeType.value = feeType;
+                    }
+                };
+
+                const handleConfirm = () => {
+                    chainStore.setCurrentChain(selectedChain.value);
+
+                    if (selectedChain.value === 'btc') {
+                        chainStore.setBtcFeeType(selectedBTCFeeType.value);
+                        if (selectedBTCFeeType.value === 'customizeFee') {
+                            if (customBTCValue.value < 1) {
+                                showToast('BTC custom fee must be at least 1 sat/vB', 'error');
+                                customBTCValue.value = 1;
+                            }
+                            chainStore.setBtcCustomizeFee(customBTCValue.value);
+                        }
+                    } else {
+                        chainStore.setMvcFeeType(selectedMVCFeeType.value);
+                        if (selectedMVCFeeType.value === 'customizeFee') {
+                            chainStore.setMvcCustomizeFee(customMVCValue.value);
+                        }
+                    }
+
+                    emit('update:modelValue', false);
+                };
+
+                watch(() => props.modelValue, (newValue) => {
+                    if (newValue) {
+                        selectedChain.value = chainStore.state.currentChain;
+                        if (selectedChain.value === 'btc') {
+                            selectedBTCFeeType.value = chainStore.state.btc.selectedFeeType;
+                            customBTCValue.value = chainStore.state.btc.customizeFee;
+                        } else {
+                            selectedMVCFeeType.value = chainStore.state.mvc.selectedFeeType;
+                            customMVCValue.value = chainStore.state.mvc.customizeFee;
+                        }
+                    }
+                }, { immediate: true });
+
+                return {
+                    chainStore,
+                    selectedChain,
+                    selectedBTCFeeType,
+                    selectedMVCFeeType,
+                    customBTCValue,
+                    customMVCValue,
+                    selectChain,
+                    selectFeeType,
+                    handleConfirm
+                };
+            }
+        };
+
+        // ==================== 文件上传组件 ====================
+        const FileUploader = {
+            template: `
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <h2 class="card-title">Upload Files to Chain</h2>
+
+                        <!-- 拖拽上传区域 -->
+                        <div
+                            class="file-drop-zone"
+                            :class="{ 'drag-over': isDragging }"
+                            @drop.prevent="handleDrop"
+                            @dragover.prevent="handleDragOver"
+                            @dragleave.prevent="handleDragLeave"
+                            @click="triggerFileInput">
+                            <input
+                                ref="fileInput"
+                                type="file"
+                                multiple
+                                @change="handleFileSelect"
+                                style="display: none;"
+                            />
+                            <div class="text-center py-8">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-600">
+                                    <span class="font-semibold text-blue-600">Click to select</span> or drag and drop files here
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">Support multiple files (Max 10MB per file)</p>
+                            </div>
+                        </div>
+
+                        <!-- 文件预览列表 -->
+                        <div v-if="files.length > 0" class="mt-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-sm font-semibold text-gray-700">Selected Files ({{ files.length }})</h3>
+                                <button @click="clearAllFiles" class="btn btn-sm btn-ghost text-red-600">
+                                    Clear All
+                                </button>
+                            </div>
+
+                            <div class="file-preview-list">
+                                <div
+                                    v-for="(fileItem, index) in files"
+                                    :key="index"
+                                    class="file-preview-item">
+                                    <!-- 文件预览内容 -->
+                                    <div class="file-preview-content">
+                                        <!-- 图片预览 -->
+                                        <img
+                                            v-if="fileItem.type === 'image'"
+                                            :src="fileItem.preview"
+                                            :alt="fileItem.name"
+                                            class="file-thumbnail"
+                                        />
+                                        <!-- 视频预览 -->
+                                        <video
+                                            v-else-if="fileItem.type === 'video'"
+                                            :src="fileItem.preview"
+                                            class="file-thumbnail"
+                                            controls
+                                        ></video>
+                                        <!-- 音频预览 -->
+                                        <div v-else-if="fileItem.type === 'audio'" class="file-icon-wrapper">
+                                            <svg class="file-icon text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+                                            </svg>
+                                        </div>
+                                        <!-- PDF 图标 -->
+                                        <div v-else-if="fileItem.type === 'pdf'" class="file-icon-wrapper">
+                                            <svg class="file-icon text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <!-- ZIP 图标 -->
+                                        <div v-else-if="fileItem.type === 'archive'" class="file-icon-wrapper">
+                                            <svg class="file-icon text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-5L9 4H4zm7 5a1 1 0 10-2 0v1H8a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V9z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <!-- 其他文件图标 -->
+                                        <div v-else class="file-icon-wrapper">
+                                            <svg class="file-icon text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    <!-- 文件信息 -->
+                                    <div class="file-info">
+                                        <p class="file-name" :title="fileItem.name">{{ fileItem.name }}</p>
+                                        <p class="file-meta">{{ formatFileSize(fileItem.size) }} · {{ fileItem.file.type || 'Unknown' }}</p>
+                                    </div>
+
+                                    <!-- 删除按钮 -->
+                                    <button @click="removeFile(index)" class="file-remove-btn">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 上传按钮和状态 -->
+                        <div class="card-actions justify-end mt-4">
+                            <button
+                                v-if="files.length > 0"
+                                class="btn btn-primary"
+                                @click="uploadFiles"
+                                :disabled="isUploading || files.length === 0">
+                                <span v-if="isUploading" class="loading loading-spinner"></span>
+                                {{ isUploading ? uploadProgress : 'Upload to Chain' }}
+                            </button>
+                        </div>
+
+                        <!-- 上传状态提示 -->
+                        <div v-if="uploadStatus" class="alert mt-4" :class="uploadStatusClass">
+                            {{ uploadStatus }}
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const { ref, computed } = Vue;
+                 const { showToast } = useToast();
+
+                // 常量定义
+                const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+                // 状态管理
+                const fileInput = ref(null);
+                const files = ref([]);
+                const isDragging = ref(false);
+                const isUploading = ref(false);
+                const uploadStatus = ref('');
+                const currentUploadIndex = ref(0);
+                     
+                // 计算属性
+                const uploadProgress = computed(() => {
+                    if (files.value.length === 0) return 'Upload to Chain';
+                    return `Uploading ${currentUploadIndex.value + 1}/${files.value.length}...`;
+                });
+
+                const uploadStatusClass = computed(() => {
+                    if (uploadStatus.value.includes('成功') || uploadStatus.value.includes('Success')) {
+                        return 'alert-success';
+                    } else if (uploadStatus.value.includes('失败') || uploadStatus.value.includes('Error') || uploadStatus.value.includes('错误')) {
+                        return 'alert-error';
+                    }
+                    return 'alert-info';
+                });
+
+                // 文件类型判断
+                const getFileType = (file) => {
+                    const type = file.type;
+                    if (type.startsWith('image/')) return 'image';
+                    if (type.startsWith('video/')) return 'video';
+                    if (type.startsWith('audio/')) return 'audio';
+                    if (type === 'application/pdf') return 'pdf';
+                    if (type.includes('zip') || type.includes('rar') || type.includes('7z') || type.includes('tar')) return 'archive';
+                    return 'other';
+                };
+
+                // 生成文件预览
+                const generatePreview = (file, type) => {
+                    return new Promise((resolve) => {
+                        if (type === 'image' || type === 'video') {
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve(e.target.result);
+                            reader.readAsDataURL(file);
+                        } else {
+                            resolve(null);
+                        }
+                    });
+                };
+
+                // 添加文件到列表
+                const addFiles = async (newFiles) => {
+                    const oversizedFiles = [];
+                    const validFiles = [];
+
+                    // 检查文件大小
+                    for (const file of newFiles) {
+                        if (file.size > MAX_FILE_SIZE) {
+                            oversizedFiles.push(file.name);
+                        } else {
+                            validFiles.push(file);
+                        }
+                    }
+
+                    // 显示超大文件提示
+                    if (oversizedFiles.length > 0) {
+                        const fileList = oversizedFiles.join(', ');
+                        showToast(`以下文件超过10MB限制，已忽略: ${fileList}`, 'error');
+                    }
+
+                    // 添加有效文件
+                    for (const file of validFiles) {
+                        const type = getFileType(file);
+                        const preview = await generatePreview(file, type);
+                        files.value.push({
+                            file,
+                            name: file.name,
+                            size: file.size,
+                            type,
+                            preview
+                        });
+                    }
+                };
+
+                // 触发文件选择
+                const triggerFileInput = () => {
+                    fileInput.value?.click();
+                };
+
+                // 文件选择处理
+                const handleFileSelect = async (event) => {
+                    const selectedFiles = Array.from(event.target.files || []);
+                    if (selectedFiles.length > 0) {
+                        await addFiles(selectedFiles);
+                    }
+                    // 清空 input 以允许选择相同文件
+                    event.target.value = '';
+                };
+
+                // 拖拽处理
+                const handleDragOver = (event) => {
+                    isDragging.value = true;
+                };
+
+                const handleDragLeave = (event) => {
+                    isDragging.value = false;
+                };
+
+                const handleDrop = async (event) => {
+                    isDragging.value = false;
+                    const droppedFiles = Array.from(event.dataTransfer.files || []);
+                    if (droppedFiles.length > 0) {
+                        await addFiles(droppedFiles);
+                    }
+                };
+
+                // 移除文件
+                const removeFile = (index) => {
+                    files.value.splice(index, 1);
+                };
+
+                // 清空所有文件
+                const clearAllFiles = () => {
+                    files.value = [];
+                    uploadStatus.value = '';
+                };
+
+                // 格式化文件大小
+                const formatFileSize = (bytes) => {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+                };
+
+                // 上传文件
+                const uploadFiles = async () => {
+                    if (files.value.length === 0) return;
+
+                    try {
+                        isUploading.value = true;
+                        const results = [];
+
+                        for (let i = 0; i < files.value.length; i++) {
+                            currentUploadIndex.value = i;
+                            const fileItem = files.value[i];
+                            uploadStatus.value = `正在上传文件 ${i + 1}/${files.value.length}: ${fileItem.name}...`;
+
+                            try {
+                                const result = await uploadFileToChainDirect(fileItem.file);
+                                results.push({
+                                    name: fileItem.name,
+                                    success: true,
+                                    txId: result?.txId || result
+                                });
+                            } catch (error) {
+                                console.error(`Upload failed for ${fileItem.name}:`, error);
+                                results.push({
+                                    name: fileItem.name,
+                                    success: false,
+                                    error: error.message
+                                });
+                            }
+                        }
+
+                        // 显示上传结果
+                        const successCount = results.filter(r => r.success).length;
+                        const failCount = results.length - successCount;
+
+                        if (failCount === 0) {
+                            uploadStatus.value = `所有文件上传成功! (${successCount}/${results.length})`;
+                            showToast('所有文件上传成功', 'success');
+                            // 上传成功后清空文件列表
+                            setTimeout(() => {
+                                clearAllFiles();
+                            }, 2000);
+                        } else {
+                            uploadStatus.value = `部分文件上传失败: 成功 ${successCount}, 失败 ${failCount}`;
+                            showToast(`部分文件上传失败: 成功 ${successCount}, 失败 ${failCount}`, 'warning');
+                        }
+                        return results.map(r => r.txId || r.error);
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        uploadStatus.value = `上传失败: ${error.message}`;
+                        showToast(`上传失败: ${error.message}`, 'error');
+                    } finally {
+                        isUploading.value = false;
+                        currentUploadIndex.value = 0;
+                    }
+                };
+
+                return {
+                    fileInput,
+                    files,
+                    isDragging,
+                    isUploading,
+                    uploadStatus,
+                    uploadProgress,
+                    uploadStatusClass,
+                    triggerFileInput,
+                    handleFileSelect,
+                    handleDragOver,
+                    handleDragLeave,
+                    handleDrop,
+                    removeFile,
+                    clearAllFiles,
+                    formatFileSize,
+                    uploadFiles
+                };
+            }
+        };
+
+        // 用户操作组件
+        const LoginUserOperate = {
+            components: {
+                UserAvatar,
+                FeeModal
+            },
+            template: `
+                <div class="flex items-center gap-3">
+                    <!-- 连接钱包按钮 -->
+                    <button v-if="!connectionStore.connected"
+                            class="btn btn-primary"
+                            @click="openConnectionModal">
+                        Connect Wallet
+                    </button>
+
+                    <!-- 授权按钮 -->
+                    <button v-else-if="!credentialsStore.get"
+                            class="btn btn-primary"
+                            @click="credentialsStore.login()">
+                        Authorize
+                    </button>
+
+                    <!-- 用户信息 -->
+                    <template v-else-if="userStore.isAuthorized">
+                        <UserAvatar
+                            :image="userStore.last.avatar"
+                            :meta-id="userStore.last.metaid"
+                            :name="userStore.last.name" />
+
+                        <!-- 用户名 -->
+                        <span class="font-medium">{{ userStore.last.name || 'Anonymous' }}</span>
+                    </template>
+
+                    <!-- 更多操作菜单 -->
+                    <div class="dropdown dropdown-end" v-if="userStore.isAuthorized">
+                        <label tabindex="0" class="btn btn-circle btn-ghost">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-5 h-5 stroke-current">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                            </svg>
+                        </label>
+                        <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-64 mt-3 z-[9999]">
+                            <!-- Fee Settings -->
+                            <li>
+                                <a @click="handleFeeClick" class="!flex !flex-row items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span>{{ chainStore.state.currentChain.toUpperCase() }}</span>
+                                        <span class="font-medium">{{ currentFeeRate }}</span>
+                                        <span class="text-sm text-gray-500">
+                                            {{ chainStore.state.currentChain === 'btc' ? 'sat/vB' : 'sats/b' }}
+                                        </span>
+                                    </div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </a>
+                            </li>
+
+                            <div class="divider my-0"></div>
+
+                            <!-- Logout -->
+                            <li>
+                                <a @click="connectionStore.disconnect()" class="!text-red-500 !flex !flex-row items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
+                                    <span class='ml-2'>Logout</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Fee Modal -->
+                    <FeeModal v-model="showFeeModal" @confirm="handleFeeConfirm" />
+                </div>
+            `,
+            setup() {
+                const { openConnectionModal } = useConnectionModal();
+                const connectionStore = useConnectionStore();
+                const credentialsStore = useCredentialsStore();
+                const userStore = useUserStore();
+                const chainStore = useChainStore();
+
+                const showFeeModal = ref(false);
+
+                const currentFeeRate = computed(() => {
+                    const currentChain = chainStore.state.currentChain;
+                    const chainData = chainStore.state[currentChain];
+                    const selectedFeeType = chainData.selectedFeeType;
+                    return chainData[selectedFeeType];
+                });
+
+                const handleFeeClick = () => {
+                    showFeeModal.value = true;
+                };
+
+                const handleFeeConfirm = (data) => {
+                    console.log('Fee configuration updated:', data);
+                };
+
+                return {
+                    openConnectionModal,
+                    connectionStore,
+                    credentialsStore,
+                    userStore,
+                    chainStore,
+                    showFeeModal,
+                    currentFeeRate,
+                    handleFeeClick,
+                    handleFeeConfirm
+                };
+            }
+        };
+
+        // 主应用组件
+        const App = {
+            components: {
+                ConnectWalletModal,
+                LoginUserOperate,
+                ToastContainer,
+                ProfileEditModal,
+                FileUploader
+            },
+            template: `
+                <div class="min-h-screen bg-base-200">
+                    <!-- Toast Container -->
+                    <ToastContainer />
+
+                    <!-- 顶部导航栏 -->
+                    <div class="navbar bg-base-100 shadow-lg">
+                        <div class="flex-1">
+                           
+                        </div>
+                        <div class="flex-none">
+                            <LoginUserOperate />
+                        </div>
+                    </div>
+
+                    <!-- 主内容区域 -->
+                    <div class="container mx-auto p-8">
+                        <!-- 文件上传组件 -->
+                        <FileUploader />
+                    </div>
+
+                    <!-- 连接钱包模态框 -->
+                    <ConnectWalletModal />
+
+                    <!-- 用户资料编辑模态框 -->
+                    <ProfileEditModal v-model="layoutStore.isShowProfileEditModal" />
+                </div>
+            `,
+            setup() {
+                const rootStore = useRootStore();
+                const layoutStore = useLayoutStore();
+                const connectionStore = useConnectionStore();
+                const userStore = useUserStore();
+                const credentialsStore = useCredentialsStore();
+                const chainStore = useChainStore();
+                const { showToast } = useToast();
+                const { closeConnectionModal } = useConnectionModal();
+
+                const accountInterval = ref(null);
+
+                // 连接Metalet钱包
+                async function connectMetalet() {
+                    try {
+                        const connection = await connectionStore.connect('metalet');
+                        if (connection?.status === 'connected') {
+                            await credentialsStore.login();
+                        }
+                    } catch (error) {
+                        showToast(error.message, 'error');
+                    }
+                }
+
+                // 处理网络变更
+                function handleNetworkChanged(network) {
+                    const networkStore = useNetworkStore();
+                    const appNetwork = networkStore.network;
+                    if (network !== appNetwork) {
+                        connectionStore.disconnect();
+                    }
+                }
+
+                // Metalet账户变更处理
+                const metaletAccountsChangedHandler = () => {
+                    try {
+                        if (connectionStore.last.wallet !== 'metalet') return;
+                        if (rootStore.isWebView) return;
+                        connectionStore.disconnect();
+                        showToast('Metalet 账户已变更。正在刷新页面...', 'warning');
+                        sleep().then(() => completeReload());
+                    } catch (error) {
+                        console.error('Error in metaletAccountsChangedHandler:', error);
+                    }
+                };
+
+                // Metalet网络变更处理
+                const metaletNetworkChangedHandler = (network) => {
+                    if (connectionStore.last.wallet !== 'metalet') return;
+                    if (rootStore.isWebView) return;
+                    handleNetworkChanged(network);
+                };
+
+                // App登录成功处理
+                const appLoginSuccessHandler = async (data) => {
+                    try {
+                        if (!userStore.isAuthorized) {
+                            await connectMetalet();
+                        }
+                    } catch (error) {
+                        showToast(error, 'error');
+                    }
+                };
+
+                // App账户切换处理
+                const appAccountSwitchHandler = async (data) => {
+                    try {
+                        if (rootStore.isWebView) {
+                            await connectionStore.disconnect();
+                            await connectMetalet();
+                        }
+                    } catch (error) {
+                        throw new Error(error);
+                    }
+                };
+
+                // App登出处理
+                const appLogoutHandler = async (data) => {
+                    try {
+                        console.log("退出登录成功", data);
+                        if (userStore.isAuthorized) {
+                            await connectionStore.disconnect();
+                            closeConnectionModal();
+                        }
+                    } catch (error) {
+                        console.error('Error in Logout handler:', error);
+                    }
+                };
+
+                onMounted(async () => {
+                    // 等待 MetaIDJs 加载完成
+                    await waitForMetaIDJs();
+                    console.log('MetaIDJs loaded:', MetaIDJs);
+                    console.log('TxComposer:', TxComposer);
+                    console.log('mvc:', mvc);
+
+                    // 初始化费率
+                    await chainStore.updateAllFeeRates();
+
+                    // 定时检查账户状态
+                    accountInterval.value = setInterval(async () => {
+                        try {
+                            rootStore.checkWebViewBridge();
+                            
+
+                            if (!userStore.isAuthorized) {
+                                if (rootStore.isWebView) {
+                                    await connectMetalet();
+                                }
+                            }
+                            if (rootStore.isWebView) return;
+
+                            if (window.metaidwallet && connectionStore.last.status === 'connected' && userStore.isAuthorized) {
+                                const res = await window.metaidwallet.getAddress();
+                                if (res?.status === 'not-connected' || userStore.last?.address !== res) {
+                                    connectionStore.disconnect();
+                                    showToast('Metalet 账户已变更', 'warning');
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error checking account status:', error);
+                        }
+                    }, 2000);
+
+                    // 设置Metalet事件监听
+                    const checkMetalet = () => {
+                        rootStore.checkWebViewBridge();
+                        if (window.metaidwallet) {
+                            try {
+                                window.metaidwallet?.on?.('accountsChanged', metaletAccountsChangedHandler);
+                                window.metaidwallet?.on?.('networkChanged', metaletNetworkChangedHandler);
+                                window.metaidwallet?.on?.('LoginSuccess', appLoginSuccessHandler);
+                                window.metaidwallet?.on?.('onAccountSwitch', appAccountSwitchHandler);
+                                window.metaidwallet?.on?.('Logout', appLogoutHandler);
+                            } catch (err) {
+                                console.error('Failed to setup Metalet listeners:', err);
+                            }
+                        } else {
+                            setTimeout(checkMetalet, 100);
+                        }
+                    };
+
+                    checkMetalet();
+
+                    // 检查BTC和MVC地址一致性
+                    if (window.metaidwallet && connectionStore.last.status === 'connected' && userStore.isAuthorized) {
+                        rootStore.checkBtcAddressSameAsMvc()
+                            .catch(() => {
+                                showToast('Metalet BTC当前地址与MVC地址不一致，请切换BTC地址与MVC地址一致后再进行使用', 'warning');
+                                setTimeout(() => {
+                                    connectionStore.disconnect();
+                                }, 3000);
+                            });
+                    }
+                });
+
+                onUnmounted(() => {
+                    if (accountInterval.value) {
+                        clearInterval(accountInterval.value);
+                    }
+
+                    // 移除事件监听
+                    try {
+                        window.metaidwallet?.removeListener?.('accountsChanged', metaletAccountsChangedHandler);
+                        window.metaidwallet?.removeListener?.('networkChanged', metaletNetworkChangedHandler);
+                        window.metaidwallet?.removeListener?.('LoginSuccess', appLoginSuccessHandler);
+                        window.metaidwallet?.removeListener?.('Logout', appLogoutHandler);
+                        window.metaidwallet?.removeListener?.('onAccountSwitch', appAccountSwitchHandler);
+                    } catch (error) {
+                        console.error('Error removing event listeners:', error);
+                    }
+                });
+
+                return {
+                    userStore,
+                    connectionStore,
+                    layoutStore
+                };
+            }
+        };
+
+        // ==================== 初始化应用 ====================
+        const pinia = createPinia();
+        const app = createApp(App);
+        app.use(pinia);
+        app.mount('#app');
+    </script>
+</body>
+</html>
